@@ -3,7 +3,7 @@ CREATE TABLE dbo.Persona(
     IdPersona INT IDENTITY(1,1) PRIMARY KEY,
     TipoDocuIdentidad INT NOT NULL,
     Nombre VARCHAR(64) NOT NULL,
-    ValorDocumentoIdentidad VARCHAR(32) NOT NULL,
+    ValorDocumentoIdentidad VARCHAR(32) NOT NULL UNIQUE,
     FechaNacimiento DATE NOT NULL,  
     Email VARCHAR(32) NOT NULL,
     telefono1 VARCHAR(32) NOT NULL,
