@@ -14,7 +14,7 @@ try:
     conn = pyodbc.connect(
         "DRIVER={ODBC Driver 18 for SQL Server};"
         "Server=localhost;"
-        "Database=master;"
+        "Database=CuentaAhorro;"
         "Trusted_Connection=yes;"
         "Encrypt=no;"
         "TrustServerCertificate=yes;"
