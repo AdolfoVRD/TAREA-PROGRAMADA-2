@@ -1,4 +1,4 @@
--- CREATE DATABASE CuentaAhorro;
+CREATE DATABASE CuentaAhorro;
 USE CuentaAhorro;
 
 DROP TABLE IF EXISTS dbo.Tipos_Doc;
