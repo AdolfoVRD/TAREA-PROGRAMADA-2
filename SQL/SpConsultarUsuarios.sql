@@ -1,13 +1,17 @@
-Use CuentaAhorro;
-CREATE PROCEDURE dbo.SpConsultarUsuarios
+USE CuentaAhorro;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.SpConsultarUsuarios
 AS 
 BEGIN
+
     SELECT 
-        IdCuenta,
+        IdUsuario,
         User_,
         Pass,
         EsAdministrador,
         ValorDocId
     FROM 
-        dbo.Usuarios
+        dbo.Usuario
 END;
+GO
