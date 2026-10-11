@@ -28,6 +28,14 @@ def ejecutarSp(nombre, *parametros):
         cursor.execute(f"EXEC {nombre} {marcadores}", *parametros)
         return cursor.fetchall()
 
+def validarLogin(usuario, contraseña):
+    filas = ejecutarSp("dbo.SpLogin", usuario, contraseña)
+    return filas[0] if filas else None
+
+def consultarCuentas(usuario):
+    filas = ejecutarSp("dbo.SpConsultarCuentasUsuario", usuario)
+    return [fila.NumeroCuenta for fila in filas]
+
 def consultarEstados(usuario):
     filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario)
     return [
@@ -66,10 +74,8 @@ def convertirArray(Array):
        Lista.append(Dic)
        
     return Lista        
+
        
-
-
-
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     global usuario_actual
@@ -84,15 +90,15 @@ def login():
         return jsonify({"mensaje": "Faltan datos"}), 400
 
     try:
-        with closing(obtener_conexion()) as conn:
-            cursor = conn.cursor()
-            cursor.execute("EXEC dbo.SpConsultarUsuarios")
-            for row in cursor.fetchall():
-                if row.User_ == usuario.strip() and row.Pass == contraseña:
-                    usuario_actual = row.User_
-                    return jsonify({"mensaje": "Se ha iniciado sesión correctamente", "usuario": row.User_, "id": row.IdUsuario, "esAdministrador": row.EsAdministrador}), 200
-
-        return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
+        fila = validarLogin(usuario.strip(), contraseña)
+        if fila is None:
+            return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
+        usuario_actual = fila.User_
+        return jsonify({
+            "mensaje": "Se ha iniciado sesión correctamente",
+            "usuario": fila.User_,
+            "esAdministrador": bool(fila.EsAdministrador)
+        }), 200
     except pyodbc.Error:
         app.logger.exception("Error al consultar la base de datos durante el inicio de sesión")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
