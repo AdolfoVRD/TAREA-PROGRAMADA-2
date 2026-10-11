@@ -13,25 +13,32 @@
         <h3 background="lightgray">Menu</h3>
         <br>
         <h3>Usuario: <span id="nombreUsuario"></span></h3>
+        <button type="button" onclick="window.location.href='estados.html'">Consultar Estados de cuenta</button>
         <button type="button" onclick="window.location.href='index.html'">Cerrar Sesión</button>
         <br>
         <output id="mensaje"> </output>
         
 </div>
 </div>
-<script src="script.js">
-    window.onload = function() {
-        event.preventDefault();
-        console.log("Cargando menu.html");
-        response = fetch("http://localhost:5000/login", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        console.log("Respuesta de la solicitud fetch:", response);
-        
-    };
-</script>
+    <script src="script.js">
+        window.onload = function () {
+            fetch("http://localhost:5000/usuario")
+                .then(response => {
+                    if (!response.ok) {
+                        window.location.href = "index.html";
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        document.getElementById("nombreUsuario").textContent = data.usuario;
+                    }
+                })
+                .catch(() => {
+                    document.getElementById("mensaje").textContent = "No se pudo conectar con el servidor.";
+                });
+        };
+    </script>
 </body>
 </html>

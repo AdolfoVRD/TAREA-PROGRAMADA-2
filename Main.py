@@ -36,8 +36,8 @@ def consultarCuentas(usuario):
     filas = ejecutarSp("dbo.SpConsultarCuentasUsuario", usuario)
     return [fila.NumeroCuenta for fila in filas]
 
-def consultarEstados(usuario):
-    filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario)
+def consultarEstados(usuario, numeroCuenta):
+    filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario, numeroCuenta)
     return [
         {
             "cuenta": fila.NumeroCuenta,
@@ -75,7 +75,22 @@ def convertirArray(Array):
        
     return Lista        
 
-       
+@app.route("/cuentas")
+def cuentas():
+    if usuario_actual is None:
+        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    try:
+        return jsonify(consultarCuentas(usuario_actual))
+    except pyodbc.Error:
+        app.logger.exception("Error al consultar las cuentas")
+        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
+
+@app.route("/usuario")
+def usuario():
+    if usuario_actual is None:
+        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    return jsonify({"usuario": usuario_actual})
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     global usuario_actual
@@ -103,16 +118,16 @@ def login():
         app.logger.exception("Error al consultar la base de datos durante el inicio de sesión")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-@app.route("/estados")
-def estados():
+@app.route("/estados/<numero_cuenta>")
+def estados(numero_cuenta):
     if usuario_actual is None:
         return jsonify({"mensaje": "Debe iniciar sesión"}), 401
     try:
-        return jsonify(consultarEstados(usuario_actual))
+        return jsonify(consultarEstados(usuario_actual, numero_cuenta))
     except pyodbc.Error:
         app.logger.exception("Error al consultar los estados de cuenta")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
-
+    
 if __name__ == "__main__":
     webbrowser.open("http://localhost:5000")
     app.run(port=5000)
