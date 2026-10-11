@@ -72,7 +72,6 @@ def convertirArray(Array):
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    global usuario_actual
     datos = request.get_json(silent=True)
     if not isinstance(datos, dict):
         return jsonify({"mensaje": "Los datos enviados no son válidos"}), 400
@@ -89,7 +88,6 @@ def login():
             cursor.execute("EXEC dbo.SpConsultarUsuarios")
             for row in cursor.fetchall():
                 if row.User_ == usuario.strip() and row.Pass == contraseña:
-                    usuario_actual = row.User_
                     return jsonify({"mensaje": "Se ha iniciado sesión correctamente", "usuario": row.User_, "id": row.IdUsuario, "esAdministrador": row.EsAdministrador}), 200
 
         return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401

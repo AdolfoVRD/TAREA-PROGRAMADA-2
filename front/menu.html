@@ -19,19 +19,11 @@
         
 </div>
 </div>
-<script src="script.js">
+<script src="script.js"></script>
+<script>
     window.onload = function() {
-        event.preventDefault();
-        console.log("Cargando menu.html");
-        response = fetch("http://localhost:5000/login", {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-        console.log("Respuesta de la solicitud fetch:", response);
-        
-    };
+        CargarMenu();
+    }
 </script>
 </body>
 </html>
