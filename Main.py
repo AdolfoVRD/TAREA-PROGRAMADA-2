@@ -28,8 +28,16 @@ def ejecutarSp(nombre, *parametros):
         cursor.execute(f"EXEC {nombre} {marcadores}", *parametros)
         return cursor.fetchall()
 
-def consultarEstados(usuario):
-    filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario)
+def validarLogin(usuario, contraseña):
+    filas = ejecutarSp("dbo.SpLogin", usuario, contraseña)
+    return filas[0] if filas else None
+
+def consultarCuentas(usuario):
+    filas = ejecutarSp("dbo.SpConsultarCuentasUsuario", usuario)
+    return [fila.NumeroCuenta for fila in filas]
+
+def consultarEstados(usuario, numeroCuenta):
+    filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario, numeroCuenta)
     return [
         {
             "cuenta": fila.NumeroCuenta,
@@ -66,9 +74,22 @@ def convertirArray(Array):
        Lista.append(Dic)
        
     return Lista        
-       
 
+@app.route("/cuentas")
+def cuentas():
+    if usuario_actual is None:
+        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    try:
+        return jsonify(consultarCuentas(usuario_actual))
+    except pyodbc.Error:
+        app.logger.exception("Error al consultar las cuentas")
+        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
+@app.route("/usuario")
+def usuario():
+    if usuario_actual is None:
+        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    return jsonify({"usuario": usuario_actual})
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -83,28 +104,29 @@ def login():
         return jsonify({"mensaje": "Faltan datos"}), 400
 
     try:
-        with closing(obtener_conexion()) as conn:
-            cursor = conn.cursor()
-            cursor.execute("EXEC dbo.SpConsultarUsuarios")
-            for row in cursor.fetchall():
-                if row.User_ == usuario.strip() and row.Pass == contraseña:
-                    return jsonify({"mensaje": "Se ha iniciado sesión correctamente", "usuario": row.User_, "id": row.IdUsuario, "esAdministrador": row.EsAdministrador}), 200
-
-        return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
+        fila = validarLogin(usuario.strip(), contraseña)
+        if fila is None:
+            return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
+        return jsonify({
+            "mensaje": "Se ha iniciado sesión correctamente",
+            "usuario": fila.User_,
+            "id": fila.IdUsuario,
+            "esAdministrador": bool(fila.EsAdministrador)
+        }), 200
     except pyodbc.Error:
         app.logger.exception("Error al consultar la base de datos durante el inicio de sesión")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-@app.route("/estados")
-def estados():
+@app.route("/estados/<numero_cuenta>")
+def estados(numero_cuenta):
     if usuario_actual is None:
         return jsonify({"mensaje": "Debe iniciar sesión"}), 401
     try:
-        return jsonify(consultarEstados(usuario_actual))
+        return jsonify(consultarEstados(usuario_actual, numero_cuenta))
     except pyodbc.Error:
         app.logger.exception("Error al consultar los estados de cuenta")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
-
+    
 if __name__ == "__main__":
     webbrowser.open("http://localhost:5000")
     app.run(port=5000)
