@@ -3,27 +3,35 @@
 <html>
 <head>
     <title>Menu</title>
-    <link rel="stylesheet" href="https://pyscript.net" />
-    <script type="module" src="https://pyscript.net"></script>
+    
     <style> 
     </style>
 </head> 
 <body class="body">	
 <div class="menu">
-    <div class="form">
-        <form>
-            <h3 background="lightgray">Menu</h3>
-            <input type="text" id="usuario"/>
-            <h3 background="lightgray">Contraseña</h3>
-            <input type="password" id="constraseña"/>
-            <br>
-            <br>
-            <button type="button" onclick="window.location.href='index.html'">Cerrar Sesión</button>
-            <br>
-            <output id="mensaje"> </output>
-        </form>
+    <div>
+        <h3 background="lightgray">Menu</h3>
+        <br>
+        <h3>Usuario: <span id="nombreUsuario"></span></h3>
+        <button type="button" onclick="window.location.href='index.html'">Cerrar Sesión</button>
+        <br>
+        <output id="mensaje"> </output>
+        
 </div>
 </div>
-<script type="py" config="./conf.json" src="./Main.py"></script>
+<script src="script.js">
+    window.onload = function() {
+        event.preventDefault();
+        console.log("Cargando menu.html");
+        response = fetch("http://localhost:5000/login", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json"
+            }
+        })
+        console.log("Respuesta de la solicitud fetch:", response);
+        
+    };
+</script>
 </body>
 </html>

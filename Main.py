@@ -2,7 +2,7 @@ import pyodbc # La librería pyodbc permite conectarse a bases de datos SQL Serv
 from contextlib import closing
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
-
+import webbrowser
 
 app = Flask(__name__, template_folder="front", static_folder="front", static_url_path="")
 CORS(app)
@@ -44,7 +44,7 @@ def convertirArray(Array):
 
 
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=['GET', 'POST'])
 def login():
     datos = request.get_json(silent=True)
     if not isinstance(datos, dict):
@@ -62,12 +62,13 @@ def login():
             cursor.execute("EXEC dbo.SpConsultarUsuarios")
             for row in cursor.fetchall():
                 if row.User_ == usuario.strip() and row.Pass == contraseña:
-                    return jsonify({"mensaje": "Se ha iniciado sesión correctamente"})
-
+                    return jsonify({"mensaje": "Se ha iniciado sesión correctamente", "usuario": row.User_, "id": row.IdUsuario, "esAdministrador": row.EsAdministrador}), 200
+                    
         return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
     except pyodbc.Error:
         app.logger.exception("Error al consultar la base de datos durante el inicio de sesión")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
 if __name__ == "__main__":
+    webbrowser.open("http://localhost:5000")
     app.run(port=5000)

@@ -33,12 +33,15 @@ function iniciarSesion(event) {
         .then(data => {
             console.log(data.mensaje);
             mensaje.textContent = data.mensaje;
+            console.info("Inicio de sesión exitoso.");
+            if (data.mensaje === "Se ha iniciado sesión correctamente") {
+
+                window.location.href = "menu.html";
+            }
         })
         .catch(error => {
             console.error("Error al iniciar sesión:", error);
-            mensaje.textContent = error instanceof TypeError
-                ? "No se pudo conectar con el servidor."
-                : error.message || "No se pudo iniciar sesión.";
+            mensaje.textContent = "Error al iniciar sesión." + (error.message ? ` ${error.message}` : "");
         })
         .finally(() => {
             usuarioInput.value = "";
