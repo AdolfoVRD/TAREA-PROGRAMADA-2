@@ -2,7 +2,7 @@ USE CuentaAhorro;
 SET XACT_ABORT ON;
 DECLARE @xml XML;
 SELECT @xml = CAST(BulkColumn AS XML)
-FROM OPENROWSET(BULK 'C:\Users\smchi\OneDrive\Documentos\GitHub\TAREA-PROGRAMADA-2\pruebas\no_catalogos.xml', SINGLE_BLOB) AS temp;
+FROM OPENROWSET(BULK 'C:\GitHub\TAREA-PROGRAMADA-2\pruebas\no_catalogos.xml', SINGLE_BLOB) AS temp;
 BEGIN TRAN;
 
 INSERT INTO dbo.Persona (TipoDocuIdentidad, Nombre, ValorDocumentoIdentidad, FechaNacimiento, Email, telefono1, telefono2)
