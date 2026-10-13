@@ -1,42 +1,169 @@
-<!DOCTYPE HTML>
-<html lang="en" >
-<html>
+<!DOCTYPE html>
+<html lang="es">
 <head>
+    <meta charset="UTF-8">
     <title>Beneficiarios</title>
-    
-    <style> 
+    <style>
+        #alertaPorcentaje {
+            display: none;
+            background: #c62828;
+            color: white;
+            font-weight: bold;
+            padding: 10px 14px;
+            margin: 12px 0;
+            border-radius: 6px;
+        }
     </style>
-</head> 
-<body class="body">	
-<div class="beneficiarios">
-    <div>
-        <h3 background="lightgray">Beneficiarios</h3>
-        <br>
-        <h3>Usuario: <span id="nombreUsuario"></span></h3>
-        <table border="1" cellpadding="6">
-            <thead>
-                <tr>
-                    <th>Beneficiario</th>
-                </tr>
-            </thead>
-            <tbody id="tablaBeneficiarios"></tbody>
-        </table>
-        <button type="button" onclick="window.location.href='menu.html'">Regresar</button>
-        <button type="button" onclick="window.location.href='beneficiarios.html'">Editar Beneficiarios</button>
-        <input type="text" id="nuevoBeneficiario" placeholder="Ingrese el nombre del beneficiario">
-        <button type="button" onclick="agregarBeneficiario()">Agregar Beneficiario</button>
-        <br>
-        <output id="mensaje"> </output>
-        
-</div>
-</div>
-<script src="script.js"></script>
-<script>
-    window.onload = function() {
-        CargarMenu();
-        const valorDocId = sessionStorage.getItem("valorDocId");
-        CargarBeneficiarios(valorDocId); 
-    };
-</script>
+</head>
+<body>
+    <h3>Beneficiarios</h3>
+    <h3>Usuario: <span id="nombreUsuario"></span></h3>
+    <button type="button" onclick="window.location.href='menu.html'">Regresar</button>
+    <br><br>
+
+    <label for="selectCuenta">Cuenta</label>
+    <select id="selectCuenta"></select>
+    <output id="mensaje"></output>
+
+    <div id="alertaPorcentaje">
+        La suma de los porcentajes de sus beneficiarios no suma 100, favor corregir y cancelar la edición
+    </div>
+
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Documento</th>
+                <th>Parentesco</th>
+                <th>Porcentaje</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tablaBeneficiarios"></tbody>
+    </table>
+
+    <h4>Agregar beneficiario</h4>
+    <input type="text" id="nuevoDocumento" placeholder="Documento de identidad">
+    <input type="number" id="nuevoParentezco" placeholder="Id de parentesco" min="1">
+    <input type="number" id="nuevoPorcentaje" placeholder="Porcentaje" min="1" max="100" step="0.01">
+    <button type="button" id="btnAgregar" onclick="agregarBeneficiario()">Agregar</button>
+
+    <script src="script.js"></script>
+    <script>
+        const selectCuenta = document.getElementById("selectCuenta");
+        const tabla = document.getElementById("tablaBeneficiarios");
+        const mensaje = document.getElementById("mensaje");
+        const alerta = document.getElementById("alertaPorcentaje");
+        const btnAgregar = document.getElementById("btnAgregar");
+
+        function pedir(url, metodo, cuerpo) {
+            return fetch(`${API_URL}${url}`, {
+                method: metodo,
+                headers: { "Content-Type": "application/json" },
+                body: cuerpo ? JSON.stringify(cuerpo) : undefined
+            }).then(async r => {
+                if (r.status === 401) { window.location.href = "index.html"; return null; }
+                return { ok: r.ok, data: await r.json() };
+            });
+        }
+
+        function porcentajeValido(valor) {
+            const n = Number(valor);
+            return valor !== "" && !isNaN(n) && n > 0 && n <= 100;
+        }
+
+        function cargarCuentasBen() {
+            pedir("/cuentas", "GET").then(res => {
+                if (!res) return;
+                res.data.forEach(numero => {
+                    const o = document.createElement("option");
+                    o.value = numero; o.textContent = numero;
+                    selectCuenta.appendChild(o);
+                });
+                if (res.data.length > 0) listarBeneficiarios();
+                else mensaje.textContent = "No hay cuentas para mostrar.";
+            }).catch(() => mensaje.textContent = "No se pudo conectar con el servidor.");
+        }
+
+        function listarBeneficiarios() {
+            tabla.innerHTML = "";
+            mensaje.textContent = "";
+            pedir(`/beneficiarios/${selectCuenta.value}`, "GET").then(res => {
+                if (!res) return;
+                if (!res.ok) { mensaje.textContent = res.data.mensaje; return; }
+
+                let suma = 0;
+                res.data.forEach(b => {
+                    suma += b.porcentaje;
+                    const fila = document.createElement("tr");
+                    fila.innerHTML = `
+                        <td>${b.nombre}</td>
+                        <td>${b.valorDocumento}</td>
+                        <td>${b.idParentezco}</td>
+                        <td>${b.porcentaje}</td>
+                        <td>
+                            <button type="button">Editar</button>
+                            <button type="button">Eliminar</button>
+                        </td>`;
+                    const [btnEditar, btnEliminar] = fila.querySelectorAll("button");
+                    btnEditar.onclick = () => editarBeneficiario(b);
+                    btnEliminar.onclick = () => eliminarBeneficiario(b);
+                    tabla.appendChild(fila);
+                });
+
+                const hayBeneficiarios = res.data.length > 0;
+                const noSuma100 = Math.abs(suma - 100) > 0.001;
+                alerta.style.display = (hayBeneficiarios && noSuma100) ? "block" : "none";
+                btnAgregar.disabled = res.data.length >= 3;
+            });
+        }
+
+        function terminar(res) {
+            if (!res) return;
+            listarBeneficiarios();
+        }
+
+        function agregarBeneficiario() {
+            const documento = document.getElementById("nuevoDocumento").value.trim();
+            const parentezco = document.getElementById("nuevoParentezco").value;
+            const porcentaje = document.getElementById("nuevoPorcentaje").value;
+            if (!documento || !parentezco || !porcentajeValido(porcentaje)) {
+                mensaje.textContent = "Revise los datos, el porcentaje debe estar entre 1 y 100.";
+                return;
+            }
+            pedir(`/beneficiarios/${selectCuenta.value}`, "POST", {
+                valorDocumento: documento,
+                idParentezco: parentezco,
+                porcentaje: porcentaje
+            }).then(terminar);
+        }
+
+        function editarBeneficiario(b) {
+            const nombre = prompt("Nombre", b.nombre);
+            if (nombre === null) return;
+            const parentezco = prompt("Id de parentesco", b.idParentezco);
+            if (parentezco === null) return;
+            const porcentaje = prompt("Porcentaje", b.porcentaje);
+            if (porcentaje === null) return;
+
+            if (!nombre.trim() || !parentezco || !porcentajeValido(porcentaje)) {
+                mensaje.textContent = "Revise los datos, el porcentaje debe estar entre 1 y 100.";
+                return;
+            }
+            pedir(`/beneficiarios/${selectCuenta.value}/${b.idBeneficiario}`, "PUT",
+                { nombre: nombre.trim(), idParentezco: parentezco, porcentaje: porcentaje }).then(terminar);
+        }
+
+        function eliminarBeneficiario(b) {
+            if (!confirm(`¿Eliminar a ${b.nombre}?`)) return;
+            pedir(`/beneficiarios/${selectCuenta.value}/${b.idBeneficiario}`, "DELETE").then(terminar);
+        }
+
+        selectCuenta.addEventListener("change", listarBeneficiarios);
+        window.onload = function () {
+            CargarMenu();
+            cargarCuentasBen();
+        };
+    </script>
 </body>
 </html>

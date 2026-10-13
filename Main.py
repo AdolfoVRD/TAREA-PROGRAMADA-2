@@ -1,4 +1,4 @@
-import pyodbc # La librería pyodbc permite conectarse a bases de datos SQL Server desde Python.
+import pyodbc  # Permite conectarse a SQL Server desde Python
 from contextlib import closing
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
@@ -16,33 +16,57 @@ DATABASE_CONNECTION_STRING = (
     "TrustServerCertificate=yes;"
 )
 
+# Guarda el usuario que inicio sesion. Como solo una persona usa el sitio
+# en localhost, una variable global es suficiente.
 usuario_actual = None
 
+# Conexion y ejecucion de procedimientos almacenados
+
 def obtener_conexion():
+    # Abre una conexion nueva a la base CuentaAhorro
     return pyodbc.connect(DATABASE_CONNECTION_STRING)
 
+
 def ejecutarSp(nombre, *parametros):
+    # Para consultas. Ejecuta el procedimiento y devuelve las filas.
+    # No hace commit porque solo lee datos.
     marcadores = ", ".join("?" for _ in parametros)
     with closing(obtener_conexion()) as conn:
         cursor = conn.cursor()
         cursor.execute(f"EXEC {nombre} {marcadores}", *parametros)
         return cursor.fetchall()
 
+
+def ejecutarSpEscritura(nombre, *parametros):
+    # Para agregar, editar y eliminar. Ejecuta el procedimiento y hace commit
+    # para que el cambio quede guardado. No devuelve filas.
+    marcadores = ", ".join("?" for _ in parametros)
+    with closing(obtener_conexion()) as conn:
+        cursor = conn.cursor()
+        cursor.execute(f"EXEC {nombre} {marcadores}", *parametros)
+        conn.commit()
+
+# Funciones que llaman a cada procedimiento
+
 def validarLogin(usuario, contraseña):
+    # Devuelve la fila del usuario si las credenciales son correctas, o None si no
     filas = ejecutarSp("dbo.SpLogin", usuario, contraseña)
     return filas[0] if filas else None
 
 def consultarCuentas(usuario):
+    # Devuelve los numeros de cuenta que el usuario puede ver.
+    # Si es administrador devuelve todas.
     filas = ejecutarSp("dbo.SpConsultarCuentasUsuario", usuario)
     return [fila.NumeroCuenta for fila in filas]
 
 def consultarEstados(usuario, numeroCuenta):
+    # Devuelve los ultimos 8 estados de cuenta, del mas reciente al mas viejo
     filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario, numeroCuenta)
     return [
         {
             "cuenta": fila.NumeroCuenta,
             "fechaInicio": str(fila.fechaInicio),
-            "fechaFin": str(fila.fechafin),
+            "fechaEstado": str(fila.fechafin),
             "saldoInicial": float(fila.saldoinicial),
             "saldoMinimo": float(fila.saldoMinimo),
             "saldoFinal": float(fila.saldo_final),
@@ -55,44 +79,41 @@ def consultarEstados(usuario, numeroCuenta):
         for fila in filas
     ]
 
+def consultarBeneficiarios(numeroCuenta):
+    # Devuelve los beneficiarios activos de una cuenta, con su nombre
+    filas = ejecutarSp("dbo.SpConsultarBeneficiarios", numeroCuenta)
+    return [
+        {
+            "idBeneficiario": fila.IdBeneficiario,
+            "valorDocumento": fila.ValorDocumentoIdentidadBeneficiario,
+            "nombre": fila.Nombre,
+            "idParentezco": fila.IdParentezco,
+            "porcentaje": float(fila.Porcentaje),
+        }
+        for fila in filas
+    ]
+
+
+def validarAcceso(numeroCuenta):
+    # Revisa que haya sesion y que la cuenta pertenezca al usuario.
+    # Devuelve una respuesta de error si algo falla, o None si todo esta bien.
+    if usuario_actual is None:
+        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    if numeroCuenta not in consultarCuentas(usuario_actual):
+        return jsonify({"mensaje": "No tiene permiso sobre esta cuenta"}), 403
+    return None
+
+# Rutas de la pagina
+
 @app.route("/")
 def index():
+    # Pagina de inicio de sesion
     return render_template("index.html")
 
-
-def convertirArray(Array):
-    # Esta funcion convierte el array resultante de la consulta 
-    # A Formato json para poder ser enviado al front end
-    Lista = []
-    Dic = {}
-    for fila in Array:
-       Dic = {
-           "id": fila[0],
-           "Nombre": fila[1],
-           "Salario": float(fila[2])
-       }
-       Lista.append(Dic)
-       
-    return Lista        
-
-@app.route("/cuentas")
-def cuentas():
-    if usuario_actual is None:
-        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
-    try:
-        return jsonify(consultarCuentas(usuario_actual))
-    except pyodbc.Error:
-        app.logger.exception("Error al consultar las cuentas")
-        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
-
-@app.route("/usuario")
-def usuario():
-    if usuario_actual is None:
-        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
-    return jsonify({"usuario": usuario_actual})
-
-@app.route("/login", methods=['GET', 'POST'])
+@app.route("/login", methods=["POST"])
 def login():
+    # Valida usuario y contraseña, y guarda el usuario que entro
+    global usuario_actual
     datos = request.get_json(silent=True)
     if not isinstance(datos, dict):
         return jsonify({"mensaje": "Los datos enviados no son válidos"}), 400
@@ -107,6 +128,7 @@ def login():
         fila = validarLogin(usuario.strip(), contraseña)
         if fila is None:
             return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
+        usuario_actual = fila.User_
         return jsonify({
             "mensaje": "Se ha iniciado sesión correctamente",
             "usuario": fila.User_,
@@ -118,110 +140,102 @@ def login():
         app.logger.exception("Error al consultar la base de datos durante el inicio de sesión")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-@app.route("/estados/<numero_cuenta>")
-def estados(numero_cuenta):
+@app.route("/cuentas")
+def cuentas():
+    # Lista de cuentas que el usuario puede ver, para llenar el selector
     if usuario_actual is None:
         return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    try:
+        return jsonify(consultarCuentas(usuario_actual))
+    except pyodbc.Error:
+        app.logger.exception("Error al consultar las cuentas")
+        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
+
+@app.route("/estados/<numero_cuenta>")
+def estados(numero_cuenta):
+    # Ultimos 8 estados de cuenta de la cuenta escogida
+    error = validarAcceso(numero_cuenta)
+    if error:
+        return error
     try:
         return jsonify(consultarEstados(usuario_actual, numero_cuenta))
     except pyodbc.Error:
         app.logger.exception("Error al consultar los estados de cuenta")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-@app.route("/beneficiarios/<numero_cuenta>")
-def consultaBeneficiarios(numero_cuenta):
-    # Consulta los beneficiarios de una cuenta
-    if numero_cuenta is None:
-        return jsonify({"mensaje": "El numero de cuenta no puede estar vacio"}), 400
+# Rutas de beneficiarios
+
+@app.route("/beneficiarios/<numero_cuenta>", methods=["GET"])
+def listarBeneficiarios(numero_cuenta):
+    # Beneficiarios activos de la cuenta
+    error = validarAcceso(numero_cuenta)
+    if error:
+        return error
     try:
-        filas = ejecutarSp("dbo.SpConsultarBeneficiarios", numero_cuenta)
-        return jsonify([
-            {
-                "IdBeneficiario": fila.IdBeneficiario,
-                "ValorDocumentoIdentidadBeneficiario": fila.ValorDocumentoIdentidadBeneficiario,
-                "IdParentezco": fila.IdParentezco,
-                "Porcentaje": fila.Porcentaje,
-            }
-            for fila in filas
-        ])
+        return jsonify(consultarBeneficiarios(numero_cuenta))
     except pyodbc.Error:
-        app.logger.exception("ERROR AL CONSULTAR LOS BENEFICIARIOS")
+        app.logger.exception("Error al consultar los beneficiarios")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-def consultarBeneficiarios(numero_cuenta):
-    # Consulta los beneficiarios de una cuenta
-    if numero_cuenta is None:
-        return []
+@app.route("/beneficiarios/<numero_cuenta>", methods=["POST"])
+def agregarBeneficiario(numero_cuenta):
+    # Agrega un beneficiario. El procedimiento valida el maximo de 3 activos
+    # y los demas campos, y no hace nada si algo no cumple.
+    error = validarAcceso(numero_cuenta)
+    if error:
+        return error
+    datos = request.get_json(silent=True) or {}
     try:
-        filas = ejecutarSp("dbo.SpConsultarBeneficiarios", numero_cuenta)
-        return [
-            {
-                "IdBeneficiario": fila.IdBeneficiario,
-                "ValorDocumentoIdentidadBeneficiario": fila.ValorDocumentoIdentidadBeneficiario,
-                "IdParentezco": fila.IdParentezco,
-                "Porcentaje": fila.Porcentaje,
-            }
-            for fila in filas
-        ]
+        ejecutarSpEscritura(
+            "dbo.SpInsertarBeneficiario", numero_cuenta,
+            str(datos.get("valorDocumento", "")).strip(),
+            int(datos.get("idParentezco", 0)),
+            float(datos.get("porcentaje", 0)))
+        return jsonify({"ok": True})
+    except (ValueError, TypeError):
+        return jsonify({"ok": False}), 400
     except pyodbc.Error:
-        app.logger.exception("ERROR AL CONSULTAR LOS BENEFICIARIOS")
-        return []
-def consultarIdPersona(valorDocId):
-    # Consulta el IdPersona de un beneficiario
-    if valorDocId is None:
-        return None
+        app.logger.exception("Error al agregar beneficiario")
+        return jsonify({"ok": False}), 500
+
+
+@app.route("/beneficiarios/<numero_cuenta>/<int:id_beneficiario>", methods=["PUT"])
+def editarBeneficiario(numero_cuenta, id_beneficiario):
+    # Actualiza nombre, parentesco y porcentaje de un beneficiario
+    error = validarAcceso(numero_cuenta)
+    if error:
+        return error
+    datos = request.get_json(silent=True) or {}
     try:
-        filas = ejecutarSp("dbo.SpConsultarIdPersona", valorDocId)
-        return filas[0].IdPersona if filas else None
+        ejecutarSpEscritura(
+            "dbo.SpActualizarBeneficiario", numero_cuenta, id_beneficiario,
+            str(datos.get("nombre", "")).strip(),
+            int(datos.get("idParentezco", 0)),
+            float(datos.get("porcentaje", 0)))
+        return jsonify({"ok": True})
+    except (ValueError, TypeError):
+        return jsonify({"ok": False}), 400
     except pyodbc.Error:
-        app.logger.exception("ERROR AL CONSULTAR EL ID DE LA PERSONA")
-        return None
+        app.logger.exception("Error al editar beneficiario")
+        return jsonify({"ok": False}), 500
 
-def consultarCuentasBeneficiario(valorDocId):
-    # Consulta las cuentas de un beneficiario por medio de su ValorDocumentoIdentidad y retorna la el numero de la cuenta asocaida
-    if valorDocId is None:
-        return []
+
+@app.route("/beneficiarios/<numero_cuenta>/<int:id_beneficiario>", methods=["DELETE"])
+def eliminarBeneficiario(numero_cuenta, id_beneficiario):
+    # Eliminacion logica. El procedimiento pone flagActivo en 0 y guarda
+    # la fecha de desactivacion, sin borrar la fila.
+    error = validarAcceso(numero_cuenta)
+    if error:
+        return error
     try:
-        id_persona = consultarIdPersona(valorDocId)  # Asegurarse de que el IdPersona existe
-        if not id_persona:
-            return []
-
-        filas = ejecutarSp("dbo.SpConsultarCuentasBeneficiario", id_persona)
-        return [fila.NumeroCuenta for fila in filas]
+        ejecutarSpEscritura("dbo.SpEliminarBeneficiario", numero_cuenta, id_beneficiario)
+        return jsonify({"ok": True})
     except pyodbc.Error:
-        app.logger.exception("ERROR AL CONSULTAR LAS CUENTAS DEL BENEFICIARIO")
-        return []
+        app.logger.exception("Error al eliminar beneficiario")
+        return jsonify({"ok": False}), 500
 
 
-
-@app.route("/cuenta")
-def consultarCuentaDocId(valorDocId):
-    # Consulta el numero de numero de cuenta por medio del valor de documento de identidad
-    return jsonify(consultarCuentasBeneficiario(valorDocId))
-
-
-def consultarPersonas(IdPersona):
-    # Consulta las personas por medio de su IdPersona y retorna la informacion de la persona
-    if IdPersona is None:
-        return []
-    try:
-        filas = ejecutarSp("dbo.SpConsultarPersonas", IdPersona)
-        return [
-            {
-                "IdPersona": fila.IdPersona,
-                "ValorDocumentoIdentidad": fila.ValorDocumentoIdentidad,
-                "Nombre": fila.Nombre,
-                "email": fila.email,
-                "telefono1": fila.telefono1,
-                "telefono2": fila.telefono2
-            }
-            for fila in filas
-        ]
-    except pyodbc.Error:
-        app.logger.exception("ERROR AL CONSULTAR LAS PERSONAS")
-        return []
-    
 if __name__ == "__main__":
+    # Abre el navegador en la pagina de login y levanta el servidor
     webbrowser.open("http://localhost:5000")
     app.run(port=5000)
-
