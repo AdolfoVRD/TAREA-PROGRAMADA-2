@@ -111,7 +111,8 @@ def login():
             "mensaje": "Se ha iniciado sesión correctamente",
             "usuario": fila.User_,
             "id": fila.IdUsuario,
-            "esAdministrador": bool(fila.EsAdministrador)
+            "esAdministrador": bool(fila.EsAdministrador),
+            "valorDocId": fila.ValorDocId
         }), 200
     except pyodbc.Error:
         app.logger.exception("Error al consultar la base de datos durante el inicio de sesión")
@@ -126,7 +127,101 @@ def estados(numero_cuenta):
     except pyodbc.Error:
         app.logger.exception("Error al consultar los estados de cuenta")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
+
+@app.route("/beneficiarios/<numero_cuenta>")
+def consultaBeneficiarios(numero_cuenta):
+    # Consulta los beneficiarios de una cuenta
+    if numero_cuenta is None:
+        return jsonify({"mensaje": "El numero de cuenta no puede estar vacio"}), 400
+    try:
+        filas = ejecutarSp("dbo.SpConsultarBeneficiarios", numero_cuenta)
+        return jsonify([
+            {
+                "IdBeneficiario": fila.IdBeneficiario,
+                "ValorDocumentoIdentidadBeneficiario": fila.ValorDocumentoIdentidadBeneficiario,
+                "IdParentezco": fila.IdParentezco,
+                "Porcentaje": fila.Porcentaje,
+            }
+            for fila in filas
+        ])
+    except pyodbc.Error:
+        app.logger.exception("ERROR AL CONSULTAR LOS BENEFICIARIOS")
+        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
+
+def consultarBeneficiarios(numero_cuenta):
+    # Consulta los beneficiarios de una cuenta
+    if numero_cuenta is None:
+        return []
+    try:
+        filas = ejecutarSp("dbo.SpConsultarBeneficiarios", numero_cuenta)
+        return [
+            {
+                "IdBeneficiario": fila.IdBeneficiario,
+                "ValorDocumentoIdentidadBeneficiario": fila.ValorDocumentoIdentidadBeneficiario,
+                "IdParentezco": fila.IdParentezco,
+                "Porcentaje": fila.Porcentaje,
+            }
+            for fila in filas
+        ]
+    except pyodbc.Error:
+        app.logger.exception("ERROR AL CONSULTAR LOS BENEFICIARIOS")
+        return []
+def consultarIdPersona(valorDocId):
+    # Consulta el IdPersona de un beneficiario
+    if valorDocId is None:
+        return None
+    try:
+        filas = ejecutarSp("dbo.SpConsultarIdPersona", valorDocId)
+        return filas[0].IdPersona if filas else None
+    except pyodbc.Error:
+        app.logger.exception("ERROR AL CONSULTAR EL ID DE LA PERSONA")
+        return None
+
+def consultarCuentasBeneficiario(valorDocId):
+    # Consulta las cuentas de un beneficiario por medio de su ValorDocumentoIdentidad y retorna la el numero de la cuenta asocaida
+    if valorDocId is None:
+        return []
+    try:
+        id_persona = consultarIdPersona(valorDocId)  # Asegurarse de que el IdPersona existe
+        if not id_persona:
+            return []
+
+        filas = ejecutarSp("dbo.SpConsultarCuentasBeneficiario", id_persona)
+        return [fila.NumeroCuenta for fila in filas]
+    except pyodbc.Error:
+        app.logger.exception("ERROR AL CONSULTAR LAS CUENTAS DEL BENEFICIARIO")
+        return []
+
+
+
+@app.route("/cuenta")
+def consultarCuentaDocId(valorDocId):
+    # Consulta el numero de numero de cuenta por medio del valor de documento de identidad
+    return jsonify(consultarCuentasBeneficiario(valorDocId))
+
+
+def consultarPersonas(IdPersona):
+    # Consulta las personas por medio de su IdPersona y retorna la informacion de la persona
+    if IdPersona is None:
+        return []
+    try:
+        filas = ejecutarSp("dbo.SpConsultarPersonas", IdPersona)
+        return [
+            {
+                "IdPersona": fila.IdPersona,
+                "ValorDocumentoIdentidad": fila.ValorDocumentoIdentidad,
+                "Nombre": fila.Nombre,
+                "email": fila.email,
+                "telefono1": fila.telefono1,
+                "telefono2": fila.telefono2
+            }
+            for fila in filas
+        ]
+    except pyodbc.Error:
+        app.logger.exception("ERROR AL CONSULTAR LAS PERSONAS")
+        return []
     
 if __name__ == "__main__":
     webbrowser.open("http://localhost:5000")
     app.run(port=5000)
+

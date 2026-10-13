@@ -8,7 +8,7 @@ CREATE OR ALTER PROCEDURE dbo.SpLogin
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT User_, EsAdministrador
+    SELECT User_, EsAdministrador,  ValorDocId, IdUsuario
     FROM dbo.Usuario
     WHERE User_ = @User AND Pass = @Pass;
 END

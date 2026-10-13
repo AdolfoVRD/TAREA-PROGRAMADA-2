@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html lang="en" >
+<html>
+<head>
+    <title>Beneficiarios</title>
+    
+    <style> 
+    </style>
+</head> 
+<body class="body">	
+<div class="beneficiarios">
+    <div>
+        <h3 background="lightgray">Beneficiarios</h3>
+        <br>
+        <h3>Usuario: <span id="nombreUsuario"></span></h3>
+        <table border="1" cellpadding="6">
+            <thead>
+                <tr>
+                    <th>Beneficiario</th>
+                </tr>
+            </thead>
+            <tbody id="tablaBeneficiarios"></tbody>
+        </table>
+        <button type="button" onclick="window.location.href='menu.html'">Regresar</button>
+        <button type="button" onclick="window.location.href='beneficiarios.html'">Editar Beneficiarios</button>
+        <input type="text" id="nuevoBeneficiario" placeholder="Ingrese el nombre del beneficiario">
+        <button type="button" onclick="agregarBeneficiario()">Agregar Beneficiario</button>
+        <br>
+        <output id="mensaje"> </output>
+        
+</div>
+</div>
+<script src="script.js"></script>
+<script>
+    window.onload = function() {
+        CargarMenu();
+        const valorDocId = sessionStorage.getItem("valorDocId");
+        CargarBeneficiarios(valorDocId); 
+    };
+</script>
+</body>
+</html>
