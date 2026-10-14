@@ -235,6 +235,30 @@ def eliminarBeneficiario(numero_cuenta, id_beneficiario):
         return jsonify({"ok": False}), 500
 
 
+@app.route("/ActualizarBitacora", methods=["POST"])
+def ActualizarBitacora():
+    print("Iniciando Actualizacion de bitacora")
+    datos = request.get_json(silent=True) or {}
+    if not isinstance(datos, dict):
+        return jsonify({"mensaje": "Los datos enviados no son válidos"}), 400
+
+    try:
+        usuario = int(datos.get("IdUsuario"))
+        accion = int(datos.get("IdAccion"))
+    except (TypeError, ValueError):
+        return jsonify({"mensaje": "Faltan o son inválidos los datos del usuario o la acción"}), 400
+
+    print("bitacora: ", usuario)
+    print("Bitacora a: ", accion)
+    try:
+        # Se ejecuta actualizar bitacora con los datos de usuario y el id de la accion
+        ejecutarSpEscritura("dbo.SpActualizarBitacora", usuario, accion)
+        return jsonify({"mensaje": "Se ha actualizado la bitacora con exito"}), 200
+    except pyodbc.Error:
+        app.logger.exception("Error al actualizar la bitacora")
+        return jsonify({"mensaje": "Error al actualizar la base de datos"}), 500
+
+
 if __name__ == "__main__":
     # Abre el navegador en la pagina de login y levanta el servidor
     webbrowser.open("http://localhost:5000")

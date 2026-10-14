@@ -59,6 +59,8 @@ function iniciarSesion(event) {
                 sessionStorage.setItem("usuario", data.usuario);
                 sessionStorage.setItem("esAdmin", String(data.esAdministrador));
                 sessionStorage.setItem("valorDocId", String(data.valorDocId));
+                sessionStorage.setItem("idUsuario", data.id)
+                ActualizarBitacora(1)
                 window.location.href = "menu.html";
             }
         })
@@ -121,3 +123,19 @@ function cargarEstados(numeroCuenta) {
                     mensaje.textContent = "No se pudieron cargar los estados de cuenta.";
                 });
         }
+
+function ActualizarBitacora(IdAccion) {
+    console.log("Actualizando Bitacora: ", IdAccion)
+    const IdUsuario = sessionStorage.getItem("idUsuario");
+    fetch(`${API_URL}/ActualizarBitacora`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ IdUsuario: IdUsuario, IdAccion: IdAccion })
+    })
+
+}
+
+function CerrarSesion(){
+    ActualizarBitacora(2)
+    window.location.href='index.html'
+}

@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Estados de cuenta</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-    <h3>Estados de cuenta</h3>
+    <div id="center">
+        <h1>Estados de cuenta</h1>
+    </div>
+    <h3>Usuario: <span id="nombreUsuario"></span></h3>
+
     <button type="button" onclick="window.location.href='menu.html'">Volver al menú</button>
     <br><br>
 
@@ -29,7 +34,7 @@
         </thead>
         <tbody id="tablaEstados"></tbody>
     </table>
-
+    <script src="script.js"></script>
     <script>
         const API_URL = "http://localhost:5000";
         const selectCuenta = document.getElementById("selectCuenta");
@@ -100,7 +105,28 @@
         }
 
         selectCuenta.addEventListener("change", () => cargarEstados(selectCuenta.value));
-        window.onload = cargarCuentas;
+        window.onload = () => {
+            const usuarioGuardado = sessionStorage.getItem("usuario");
+            const esAdmin = sessionStorage.getItem("esAdmin");
+            const valorDocId = sessionStorage.getItem("valorDocId");
+            console.log("Valor Doc ID:", valorDocId);
+            console.log("Usuario guardado:", usuarioGuardado);
+            console.log("Es administrador:", esAdmin);
+            if (!usuarioGuardado) {
+                
+                window.location.href = "index.html";
+                return;
+            }
+            ActualizarBitacora(8)
+            const usuario = usuarioGuardado;
+
+            const nombreUsuarioElement = document.getElementById("nombreUsuario");
+            if (nombreUsuarioElement) {
+                nombreUsuarioElement.textContent = usuario;
+            }
+            cargarCuentas();
+           
+        };
     </script>
 </body>
 </html>

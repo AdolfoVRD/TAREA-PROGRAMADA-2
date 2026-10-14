@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Bitácora</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <div id="center">
+        <h1>Bitácora</h1>
+    </div>
+    <h3>Usuario: <span id="nombreUsuario"></span></h3>
+
+    <button type="button" onclick="window.location.href='menu.html'">Volver al menú</button>
+    <br><br>
+
+    <label for="selectCuenta">Cuenta</label>
+    <select id="selectCuenta"></select>
+    <output id="mensaje"></output>
+
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>Fecha de la accion</th>
+                <th>Id de operacion</th>
+                <th>Operacion</th>
+            </tr>
+        </thead>
+        <tbody id="tablaEstados"></tbody>
+    </table>
+
+    <script>
+        const API_URL = "http://localhost:5000";
+        const selectCuenta = document.getElementById("selectCuenta");
+        const tablaEstados = document.getElementById("tablaEstados");
+        const mensaje = document.getElementById("mensaje");
+
+        function dinero(valor) {
+            return valor.toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function cargarCuentas() {
+            fetch(`${API_URL}/cuentas`)
+                .then(response => {
+                    if (response.status === 401) {
+                        window.location.href = "index.html";
+                        return null;
+                    }
+                    return response.json();
+                })
+                .then(cuentas => {
+                    if (!cuentas) return;
+                    selectCuenta.innerHTML = "";
+                    cuentas.forEach(numero => {
+                        const opcion = document.createElement("option");
+                        opcion.value = numero;
+                        opcion.textContent = numero;
+                        selectCuenta.appendChild(opcion);
+                    });
+                    if (cuentas.length > 0) {
+                        cargarEstados(cuentas[0]);
+                    } else {
+                        mensaje.textContent = "No hay cuentas para mostrar.";
+                    }
+                })
+                .catch(() => {
+                    mensaje.textContent = "No se pudo conectar con el servidor.";
+                });
+        }
+
+        function cargarEstados(numeroCuenta) {
+            mensaje.textContent = "";
+            tablaEstados.innerHTML = "";
+            fetch(`${API_URL}/estados/${numeroCuenta}`)
+                .then(response => response.json())
+                .then(estados => {
+                    estados.forEach(estado => {
+                        const fila = document.createElement("tr");
+                        fila.style.cursor = "pointer";
+                        fila.innerHTML = `
+                            <td>${estado.fechaEstado}</td>
+                            <td>${dinero(estado.saldoInicial)}</td>
+                            <td>${dinero(estado.saldoFinal)}</td>
+                            <td>${dinero(estado.saldoMinimo)}</td>
+                            <td>${dinero(estado.intereses)}</td>
+                            <td>${estado.retiros}</td>
+                            <td>${estado.depositos}</td>
+                            <td>${estado.sinpeEntrantes}</td>
+                            <td>${estado.sinpeSalientes}</td>`;
+                        fila.addEventListener("click", () => {
+                            // En la TP3 aquí se mostrarán los movimientos del mes
+                        });
+                        tablaEstados.appendChild(fila);
+                    });
+                })
+                .catch(() => {
+                    mensaje.textContent = "No se pudieron cargar los estados de cuenta.";
+                });
+        }
+
+        selectCuenta.addEventListener("change", () => cargarEstados(selectCuenta.value));
+        window.onload = () => {
+            const usuarioGuardado = sessionStorage.getItem("usuario");
+            const esAdmin = sessionStorage.getItem("esAdmin");
+            const valorDocId = sessionStorage.getItem("valorDocId");
+            console.log("Valor Doc ID:", valorDocId);
+            console.log("Usuario guardado:", usuarioGuardado);
+            console.log("Es administrador:", esAdmin);
+            if (!usuarioGuardado) {
+                
+                window.location.href = "index.html";
+                return;
+            }
+
+            const usuario = usuarioGuardado;
+
+            const nombreUsuarioElement = document.getElementById("nombreUsuario");
+            if (nombreUsuarioElement) {
+                nombreUsuarioElement.textContent = usuario;
+            }
+            cargarCuentas();
+           
+        };
+    </script>
+</body>
+</html>

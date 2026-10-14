@@ -74,3 +74,12 @@ CREATE TABLE dbo.Usuarios_Ver(
     FOREIGN KEY (NumeroCuenta) REFERENCES dbo.Cuenta(NumeroCuenta),
     UNIQUE (User_, NumeroCuenta)
 );
+
+CREATE TABLE dbo.Bitacora(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    IdUsuario INT NOT NULL,
+    IdOperacion INT NOT NULL,
+    Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuario (IdUsuario),
+    FOREIGN KEY (IdOperacion) REFERENCES dbo.TipoOpreacionesBitacora (Id)
+);

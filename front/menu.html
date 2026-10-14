@@ -3,19 +3,25 @@
 <html>
 <head>
     <title>Menu</title>
-    
-    <style> 
-    </style>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="title" content="Menu"/>
+    <meta name="description" content="Menu principal." />
+    <meta property="og:type" content="website" />
 </head> 
 <body class="body">	
+    <div id="center">
+        <h1>Menu</h1>
+    </div>
 <div class="menu">
     <div>
-        <h3 background="lightgray">Menu</h3>
         <br>
         <h3>Usuario: <span id="nombreUsuario"></span></h3>
         <button type="button" onclick="window.location.href='estados.html'">Consultar Estados de cuenta</button>
         <button type="button" onclick="window.location.href='beneficiarios.html'">Editar Beneficiarios</button>
-        <button type="button" onclick="window.location.href='index.html'">Cerrar Sesión</button>
+        <button type="button" onclick="window.location.href='bitacora.html'">Consultar Bitácora</button>
+        <button type="button" onclick="CerrarSesion()">Cerrar Sesión</button>
         <br>
         <output id="mensaje"> </output>
         
