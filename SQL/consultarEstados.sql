@@ -22,18 +22,15 @@ CREATE OR ALTER PROCEDURE dbo.SpConsultarCuentasUsuario
 AS
 BEGIN
     SET NOCOUNT ON;
-
     DECLARE @EsAdministrador BIT = ISNULL(
         (SELECT usuario.EsAdministrador
          FROM dbo.Usuario usuario
          WHERE usuario.User_ = @User), 0);
-
     SELECT cuenta.NumeroCuenta
     FROM dbo.Cuenta cuenta
-    WHERE @EsAdministrador = 1
-       OR cuenta.NumeroCuenta IN (SELECT usuarioVer.NumeroCuenta
-                                  FROM dbo.Usuarios_Ver usuarioVer
-                                  WHERE usuarioVer.User_ = @User)
+    WHERE @EsAdministrador = 1 
+    OR cuenta.NumeroCuenta 
+    IN (SELECT usuarioVer.NumeroCuenta FROM dbo.Usuarios_Ver usuarioVer WHERE usuarioVer.User_ = @User)
     ORDER BY cuenta.NumeroCuenta;
 END
 GO
