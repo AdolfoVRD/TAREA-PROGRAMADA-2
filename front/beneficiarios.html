@@ -121,8 +121,11 @@
             });
         }
 
-        function terminar(res) {
+        function terminar(res, idOperacion) {
             if (!res) return;
+            if (res.ok && res.data.ok) {
+                ActualizarBitacora(idOperacion);
+            }
             listarBeneficiarios();
         }
 
@@ -138,7 +141,7 @@
                 valorDocumento: documento,
                 idParentezco: parentezco,
                 porcentaje: porcentaje
-            }).then(terminar);
+            }).then(res => terminar(res, 3));
         }
 
         function editarBeneficiario(b) {
@@ -154,12 +157,17 @@
                 return;
             }
             pedir(`/beneficiarios/${selectCuenta.value}/${b.idBeneficiario}`, "PUT",
-                { nombre: nombre.trim(), idParentezco: parentezco, porcentaje: porcentaje }).then(terminar);
-        }
-
+                { nombre: nombre.trim(), idParentezco: parentezco, porcentaje: porcentaje })
+                .then(res => {
+                terminar(res, 4);
+                    if (res && res.ok && res.data.ok && Number(porcentaje) !== b.porcentaje) {
+                        ActualizarBitacora(7);
+                    }
+                });
+        }   
         function eliminarBeneficiario(b) {
             if (!confirm(`¿Eliminar a ${b.nombre}?`)) return;
-            pedir(`/beneficiarios/${selectCuenta.value}/${b.idBeneficiario}`, "DELETE").then(terminar);
+            pedir(`/beneficiarios/${selectCuenta.value}/${b.idBeneficiario}`, "DELETE").then(res => terminar(res, 5));
         }
 
         selectCuenta.addEventListener("change", listarBeneficiarios);
