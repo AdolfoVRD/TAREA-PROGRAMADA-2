@@ -23,7 +23,7 @@ BEGIN
 
     SELECT
         Nombre
-    FROM dbo.TipoOperacionesBitacora
+    FROM dbo.TipoOpreacionesBitacora
     WHERE Id = @IdOperacion;
 
 END

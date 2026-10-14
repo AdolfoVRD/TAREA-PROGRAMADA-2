@@ -259,6 +259,32 @@ def ActualizarBitacora():
         return jsonify({"mensaje": "Error al actualizar la base de datos"}), 500
 
 
+def consultarTipoOperacion(idOperacion):
+    with closing(obtener_conexion()) as conn:
+        cursor = conn.cursor()
+        cursor.execute("EXEC dbo.SpConsultarTipoOperacion ?", idOperacion)
+        return cursor.fetchall()
+
+
+@app.route("/bitacora/<idUsuario>", methods=["POST"])
+def listarBitacora(idUsuario):
+    # Lista la bitacora de un usuario
+    try:
+        filas = ejecutarSp("dbo.SpConsultarBitacora", idUsuario)
+        bitacora = []
+        for fila in filas:
+            bitacora.append({
+                "id": fila.IdUsuario,
+                "idOperacion": fila.IdOperacion,
+                "fechaAccion": str(fila.Fecha),
+                "nombreAccion": consultarTipoOperacion(fila.IdOperacion),
+            })
+        return jsonify(bitacora), 200
+    except pyodbc.Error:
+        app.logger.exception("Error al consultar la bitacora")
+        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
+
+
 if __name__ == "__main__":
     # Abre el navegador en la pagina de login y levanta el servidor
     webbrowser.open("http://localhost:5000")
