@@ -3,6 +3,7 @@ GO
 
 
 CREATE OR ALTER PROCEDURE dbo.SpActualizarBitacora
+-- Este procedimiento sse encarga de actualizar la bitacora, requiere de un usuario y el id del tipo de operacion
     @IdUsuario INT,
     @IdOperacion INT
 AS
@@ -16,6 +17,7 @@ BEGIN
 END
 GO
 CREATE OR ALTER PROCEDURE dbo.SpConsultarTipoOperacion
+-- Este procedimiento recibe el id de un tipo de operacion y muestra el nombre de dicha operacion
     @IdOperacion INT
 AS
 BEGIN
@@ -32,6 +34,8 @@ CREATE OR ALTER PROCEDURE dbo.SpConsultarBitacora
     @IdUsuario Int
 AS
 BEGIN
+-- Este procedimiento se encarga de consultar la bitacora utilizando el id del usuario
+    SET NOCOUNT ON;
     SELECT
         Id,
         IdUsuario,
