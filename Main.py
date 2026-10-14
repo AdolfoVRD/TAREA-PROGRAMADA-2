@@ -263,7 +263,7 @@ def consultarTipoOperacion(idOperacion):
     with closing(obtener_conexion()) as conn:
         cursor = conn.cursor()
         cursor.execute("EXEC dbo.SpConsultarTipoOperacion ?", idOperacion)
-        return cursor.fetchall()
+        return str(cursor.fetchall()[0][0])
 
 
 @app.route("/bitacora/<idUsuario>", methods=["POST"])
