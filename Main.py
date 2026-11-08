@@ -9,11 +9,14 @@ CORS(app)
 
 DATABASE_CONNECTION_STRING = (
     "DRIVER={ODBC Driver 18 for SQL Server};"
-    "Server=localhost;"
-    "Database=CuentaAhorro;"
-    "Trusted_Connection=yes;"
-    "Encrypt=no;"
-    "TrustServerCertificate=yes;"
+    "Server=tcp:dbdavidysebas.database.windows.net,1433;"
+    "Initial Catalog=CuentaAhorro;Persist Security Info=False;"
+    "UID=adminbd;"
+    "PWD=tareaBd3;"
+    "MultipleActiveResultSets=no;"
+    "Encrypt=yes;"
+    "TrustServerCertificate=no;"
+    "Connection Timeout=30;"
 )
 
 # Guarda el usuario que inicio sesion. Como solo una persona usa el sitio
