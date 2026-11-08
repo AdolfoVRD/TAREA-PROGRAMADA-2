@@ -9,8 +9,10 @@ CORS(app)
 
 DATABASE_CONNECTION_STRING = (
     "DRIVER={ODBC Driver 18 for SQL Server};"
-    "Server=localhost;"
+    "Server=dbdavidysebas.database.windows.net;"
     "Database=CuentaAhorro;"
+    "UID=adminbd;"
+    "PWD=tareaBd3;"
     "Trusted_Connection=yes;"
     "Encrypt=no;"
     "TrustServerCertificate=yes;"
