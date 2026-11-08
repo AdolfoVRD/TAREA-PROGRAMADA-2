@@ -1,10 +1,17 @@
 USE CuentaAhorro;
+GO
+
+DROP TABLE IF EXISTS dbo.Bitacora;
+DROP TABLE IF EXISTS dbo.Movimiento;
+DROP TABLE IF EXISTS dbo.FechaProcesada;
 DROP TABLE IF EXISTS dbo.Usuarios_Ver;
 DROP TABLE IF EXISTS dbo.Estado_de_Cuenta;
 DROP TABLE IF EXISTS dbo.Beneficiario;
-DROP TABLE IF EXISTS dbo.Cuenta;
 DROP TABLE IF EXISTS dbo.Usuario;
+DROP TABLE IF EXISTS dbo.Cuenta;
 DROP TABLE IF EXISTS dbo.Persona;
+GO
+
 CREATE TABLE dbo.Persona(
     IdPersona INT IDENTITY(1,1) PRIMARY KEY,
     TipoDocuIdentidad INT NOT NULL,
@@ -34,11 +41,17 @@ CREATE TABLE dbo.Beneficiario(
     ValorDocumentoIdentidadBeneficiario VARCHAR(32) NOT NULL,
     IdParentezco INT NOT NULL,
     Porcentaje DECIMAL(5,2) NOT NULL,
+    banderaActiva BIT NOT NULL DEFAULT 1,
+    FechaDesactivacion DATE NULL,
     FOREIGN KEY (NumeroCuenta) REFERENCES dbo.Cuenta(NumeroCuenta),
     FOREIGN KEY (ValorDocumentoIdentidadBeneficiario) REFERENCES dbo.Persona(ValorDocumentoIdentidad),
-    FOREIGN KEY (IdParentezco) REFERENCES dbo.Parentezco(Id),
-    UNIQUE (NumeroCuenta, ValorDocumentoIdentidadBeneficiario)
+    FOREIGN KEY (IdParentezco) REFERENCES dbo.Parentezco(Id)
 );
+GO
+CREATE UNIQUE INDEX UX_Beneficiario_Activo
+ON dbo.Beneficiario (NumeroCuenta, ValorDocumentoIdentidadBeneficiario)
+WHERE banderaActiva = 1;
+GO
 
 CREATE TABLE dbo.Estado_de_Cuenta(
     IdEstadoCuenta INT IDENTITY(1,1) PRIMARY KEY,
@@ -48,13 +61,26 @@ CREATE TABLE dbo.Estado_de_Cuenta(
     saldoinicial DECIMAL(12,2) NOT NULL,
     saldoMinimo DECIMAL(12,2) NOT NULL,
     saldo_final DECIMAL(12,2) NOT NULL,
-    interesesAcumulados DECIMAL(12,2) NOT NULL,
-    cantRetiros INT NOT NULL,
-    cantDepositos INT NOT NULL,
-    cantSinpeEntrantes INT NOT NULL,
-    cantSinpeSalientes INT NOT NULL,
+    cantOpATM INT NOT NULL DEFAULT 0,
+    cantOpHumano INT NOT NULL DEFAULT 0,
+    cantOpSinpe INT NOT NULL DEFAULT 0,
+    EstaAbierto BIT NOT NULL DEFAULT 1,
     FOREIGN KEY (NumeroCuenta) REFERENCES dbo.Cuenta(NumeroCuenta),
     UNIQUE (NumeroCuenta, fechaInicio)
+);
+
+CREATE TABLE dbo.Movimiento(
+    IdMovimiento INT IDENTITY(1,1) PRIMARY KEY,
+    NumeroCuenta VARCHAR(64) NOT NULL,
+    IdEstadoCuenta INT NOT NULL,
+    IdTipoMovimiento INT NOT NULL,
+    Fecha DATE NOT NULL,
+    Monto DECIMAL(12,2) NOT NULL,
+    Descripcion NVARCHAR(256) NOT NULL,
+    NuevoSaldo DECIMAL(12,2) NOT NULL,
+    FOREIGN KEY (NumeroCuenta) REFERENCES dbo.Cuenta(NumeroCuenta),
+    FOREIGN KEY (IdEstadoCuenta) REFERENCES dbo.Estado_de_Cuenta(IdEstadoCuenta),
+    FOREIGN KEY (IdTipoMovimiento) REFERENCES dbo.Tipos_Movimiento(Id)
 );
 
 CREATE TABLE dbo.Usuario(
@@ -83,3 +109,27 @@ CREATE TABLE dbo.Bitacora(
     FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuario (IdUsuario),
     FOREIGN KEY (IdOperacion) REFERENCES dbo.TipoOpreacionesBitacora (Id)
 );
+
+CREATE TABLE dbo.FechaProcesada(
+    Fecha DATE PRIMARY KEY,
+    FechaHoraProceso DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
+
+CREATE OR ALTER TRIGGER dbo.TrAbrirPrimerEstadoCuenta
+ON dbo.Cuenta
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO dbo.Estado_de_Cuenta (NumeroCuenta, fechaInicio, fechafin, saldoinicial, saldoMinimo, saldo_final)
+    SELECT cuentaNueva.NumeroCuenta,
+           cuentaNueva.FechaCreacion,
+           DATEADD(MONTH, 1, cuentaNueva.FechaCreacion),
+           cuentaNueva.Saldo,
+           cuentaNueva.Saldo,
+           cuentaNueva.Saldo
+    FROM inserted cuentaNueva;
+END
+GO
