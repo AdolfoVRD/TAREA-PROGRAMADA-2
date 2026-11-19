@@ -1,5 +1,11 @@
 USE CuentaAhorro;
 GO
+DROP TABLE IF EXISTS dbo.Tipos_Doc;
+DROP TABLE IF EXISTS dbo.Tipos_Moneda;
+DROP TABLE IF EXISTS dbo.Parentezco;
+DROP TABLE IF EXISTS dbo.Tipo_Cuenta_Ahorros;
+DROP TABLE IF EXISTS dbo.Tipos_Movimiento;
+DROP TABLE IF EXISTS dbo.TipoOpreacionesBitacora;
 
 CREATE TABLE dbo.Tipos_Doc(
     Id INT PRIMARY KEY,
