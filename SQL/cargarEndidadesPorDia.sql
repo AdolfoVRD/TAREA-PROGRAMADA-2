@@ -20,6 +20,7 @@ BEGIN
         persona.value('@TipoDocuIdentidad', 'INT'),
         persona.value('@Nombre', 'VARCHAR(64)'),
         persona.value('@ValorDocumentoIdentidad', 'VARCHAR(32)'),
+        persona.value('@FechaNacimiento', 'DATE'),
         persona.value('@Email', 'VARCHAR(128)'),
         persona.value('@telefono1', 'VARCHAR(32)'),
         persona.value('@telefono2', 'VARCHAR(32)')
