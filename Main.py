@@ -67,6 +67,7 @@ def consultarEstados(usuario, numeroCuenta):
     filas = ejecutarSp("dbo.SpConsultarEstadosCuenta", usuario, numeroCuenta)
     return [
         {
+            "id": fila.IdEstadoCuenta,
             "cuenta": fila.NumeroCuenta,
             "fechaInicio": str(fila.fechaInicio),
             "fechaEstado": str(fila.fechafin),
@@ -285,6 +286,24 @@ def listarBitacora(idUsuario):
         return jsonify(bitacora), 200
     except pyodbc.Error:
         app.logger.exception("Error al consultar la bitacora")
+        return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
+
+@app.route("/movimientos/<idUsuario>", methods=["POST"])
+def listarMovimientos(Usuario, idEstado):
+    # Lista los movimientos de un usuario
+    try:
+        filas = ejecutarSp("dbo.SpConsultarMovimientoEstado", Usuario, idEstado)
+        movimientos = []
+        for fila in filas:
+            movimientos.append({
+                "id": fila.IdUsuario,
+                "idOperacion": fila.IdOperacion,
+                "fechaAccion": str(fila.Fecha),
+                "nombreAccion": consultarTipoOperacion(fila.IdOperacion),
+            })
+        return jsonify(movimientos), 200
+    except pyodbc.Error:
+        app.logger.exception("Error al consultar los movimientos")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
 

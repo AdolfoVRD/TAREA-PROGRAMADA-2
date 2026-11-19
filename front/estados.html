@@ -34,6 +34,19 @@
         </thead>
         <tbody id="tablaEstados"></tbody>
     </table>
+
+    <table border="1" cellpadding="6">
+        <thead>
+            <tr>
+                <th>Fecha de la accion</th>
+                <th>Monto</th>
+                <th>Tipo</th>
+                <th>Descripción</th>
+            </tr>
+        </thead>
+        <tbody id="tablaMovimientos"></tbody>
+    </table>
+
     <script src="script.js"></script>
     <script>
         const selectCuenta = document.getElementById("selectCuenta");
@@ -93,7 +106,7 @@
                             <td>${estado.sinpeEntrantes}</td>
                             <td>${estado.sinpeSalientes}</td>`;
                         fila.addEventListener("click", () => {
-                            // En la TP3 aquí se mostrarán los movimientos del mes
+                            cargarMovimientos(usuarioGuardado, estado.id);
                         });
                         tablaEstados.appendChild(fila);
                     });

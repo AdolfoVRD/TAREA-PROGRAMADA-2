@@ -135,6 +135,40 @@ function ActualizarBitacora(IdAccion) {
 
 }
 
+function cargarMovimientos(usuario, idEstado) {
+            mensaje.textContent = "";
+            tablaMovimientos.innerHTML = "";
+            fetch(`${API_URL}/Movimientos/${usuario}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ idUsuario: usuario, idEstado: idEstado })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(movimientos => {
+                    movimientos.forEach(movimiento => {
+                        const fila = document.createElement("tr");
+                        fila.style.cursor = "pointer";
+                        fila.innerHTML = `
+                            <td>${movimiento.fechaAccion}</td>
+                            <td>${movimiento.monto}</td>
+                            <td>${movimiento.tipo}</td>
+                            <td>${movimiento.descripcion}</td>`;
+                        fila.addEventListener("click", () => {
+                           
+                        });
+                        tablaMovimientos.appendChild(fila);
+                    });
+                })
+                .catch(() => {
+                    mensaje.textContent = "No se pudo cargar los movimientos.";
+                });
+}
+
 function CerrarSesion(){
     ActualizarBitacora(2)
     window.location.href='index.html'
