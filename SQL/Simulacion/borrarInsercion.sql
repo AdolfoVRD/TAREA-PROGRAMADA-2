@@ -6,14 +6,16 @@ SET XACT_ABORT ON;
 BEGIN TRAN;
 
 DELETE FROM dbo.Bitacora;
+DELETE FROM dbo.Movimiento;
 DELETE FROM dbo.Usuarios_Ver;
 DELETE FROM dbo.Estado_de_Cuenta;
 DELETE FROM dbo.Beneficiario;
 DELETE FROM dbo.Usuario;
-DELETE FROM dbo.Cuenta;
-DELETE FROM dbo.Persona;
+--DELETE FROM dbo.Cuenta;
+--DELETE FROM dbo.Persona;
 
 DBCC CHECKIDENT ('dbo.Bitacora', RESEED, 0);
+DBCC CHECKIDENT ('dbo.Movimiento', RESEED, 0);
 DBCC CHECKIDENT ('dbo.Usuarios_Ver', RESEED, 0);
 DBCC CHECKIDENT ('dbo.Estado_de_Cuenta', RESEED, 0);
 DBCC CHECKIDENT ('dbo.Beneficiario', RESEED, 0);

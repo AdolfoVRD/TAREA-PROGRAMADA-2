@@ -3,22 +3,23 @@ SET XACT_ABORT ON;
 SET NOCOUNT ON;
 
 
-CREATE MASTER KEY
-ENCRYPTION BY PASSWORD = 'Adminbd3tareabd3!';
+--CREATE MASTER KEY
+--ENCRYPTION BY PASSWORD = 'Adminbd3tareabd3!';
 
 
-CREATE DATABASE SCOPED CREDENTIAL CredencialBlob
-WITH
-    IDENTITY = 'SHARED ACCESS SIGNATURE',
-    SECRET = 'sp=racwdli&st=2026-11-19T06:21:30Z&se=2026-11-29T14:36:30Z&spr=https&sv=2026-02-06&sr=c&sig=VxDV6h01lDaUNpBttx0R9IWpiUmkqJQcdp%2BkH7zhVu8%3D';
+--CREATE DATABASE SCOPED CREDENTIAL CredencialBlob
+--WITH
+--    IDENTITY = 'SHARED ACCESS SIGNATURE',
+--    SECRET = 'sp=racwdli&st=2026-11-19T06:21:30Z&se=2026-11-29T14:36:30Z&spr=https&sv=2026-02-06&sr=c&sig=VxDV6h01lDaUNpBttx0R9IWpiUmkqJQcdp%2BkH7zhVu8%3D';
 
 
-CREATE EXTERNAL DATA SOURCE FuenteBlob
-WITH (
-    TYPE = BLOB_STORAGE,
-    LOCATION = 'https://tareabd3.blob.core.windows.net/tareabd3',
-    CREDENTIAL = CredencialBlob
-);
+--CREATE EXTERNAL DATA SOURCE FuenteBlob
+--WITH (
+--    TYPE = BLOB_STORAGE,
+--    LOCATION = 'https://tareabd3.blob.core.windows.net/tareabd3',
+--    CREDENTIAL = CredencialBlob
+--);
+
 SELECT
     name,
     type_desc,
@@ -64,9 +65,58 @@ BEGIN
             @xml, @Fecha;
 
         -- Se procesan los movimientos del día
-       
+        -- Primero se insertan en la tabla temporal #MovimientosDia desde el xml
+       INSERT INTO #MovimientosDia
+        (
+            Fecha,
+            NumeroCuenta,
+            NombreTipo,
+            Monto,
+            Descripcion
+        )
+        SELECT
+            F.N.value('@Fecha', 'DATE'),
+            M.N.value('@CodigoCuenta', 'VARCHAR(64)'),
+            LTRIM(RTRIM(M.N.value('@Tipo', 'VARCHAR(64)'))),
+            M.N.value('@Monto', 'DECIMAL(12,2)'),
+            M.N.value('@Descripcion', 'NVARCHAR(256)')
+        FROM @Xml.nodes('/Operaciones/FechaOperacion') AS F(N)
+        CROSS APPLY F.N.nodes('Movimientos') AS M(N);
 
+        DECLARE @Posicion INT = 1;
+        DECLARE @Cantidad INT;
+        DECLARE @NumeroCuenta VARCHAR(64);
+        DECLARE @NombreTipo VARCHAR(64);
+        DECLARE @Monto DECIMAL(12,2);
+        DECLARE @Descripcion NVARCHAR(256);
 
+        -- Se establece el limite para el while
+        SELECT @Cantidad = COUNT(*)
+        FROM #MovimientosDia;
+
+        -- Se procesan los movimientos del día en orden
+        WHILE @Posicion <= @Cantidad
+        BEGIN
+
+            SELECT
+                @NumeroCuenta = NumeroCuenta,
+                @NombreTipo = NombreTipo,
+                @Fecha = Fecha,
+                @Monto = Monto,
+                @Descripcion = Descripcion
+            FROM #MovimientosDia
+            WHERE IdTemporal = @Posicion;
+
+            EXEC dbo.SpAplicarMovimiento
+                @NumeroCuenta = @NumeroCuenta,
+                @NombreTipo = @NombreTipo,
+                @Fecha = @Fecha,
+                @Monto = @Monto,
+                @Descripcion = @Descripcion;
+
+            SET @Posicion = @Posicion + 1;
+
+        END;
 
         --- Se cierran los estados de cuenta que tengan fecha de cierre igual a la fecha actual
         DECLARE @IdEstadoCuenta INT;
@@ -98,8 +148,7 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
 
-        RETURN 500050;
     END CATCH
 END;
-
+DROP TABLE #MovimientosDia;
 GO
