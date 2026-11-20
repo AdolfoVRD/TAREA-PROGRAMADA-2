@@ -6,7 +6,7 @@ SET NOCOUNT ON;
 DROP TABLE IF EXISTS #MovDia;
 DROP TABLE IF EXISTS #Cierres;
 
-CREATE IF NOT EXISTS MASTER KEY
+CREATE MASTER KEY
 ENCRYPTION BY PASSWORD = 'Adminbd3tareabd3!';
 
 
@@ -37,7 +37,7 @@ FROM OPENROWSET(
     SINGLE_BLOB
 ) AS Archivo;
 
-
+SELECT @xml AS XmlData;
 
 -- Rango de fechas que trae el XML
 DECLARE @Fecha DATE;
@@ -76,7 +76,7 @@ BEGIN
     SET @FechaTexto = CONVERT(VARCHAR(10), @Fecha, 23);
 
     BEGIN TRY
-        BEGIN TRAN;
+        BEGIN TRANSACTION;
 
         -- 1. Personas, cuentas, beneficiarios, usuarios y permisos del día
         EXEC dbo.SpCargarEntidadesDia @xml, @Fecha;
@@ -89,7 +89,7 @@ BEGIN
                movimiento.value('@Monto', 'DECIMAL(12,2)'),
                movimiento.value('@Descripcion', 'NVARCHAR(256)')
         FROM @xml.nodes('/Operaciones/FechaOperacion[@Fecha=sql:variable("@FechaTexto")]/Movimientos') AS tablaMovimientos(movimiento)
-        ORDER BY movimiento.value('count(./preceding-sibling::Movimientos)', 'INT');
+        --ORDER BY movimiento.value('count(./preceding-sibling::Movimientos)', 'INT');
 
         SELECT @i = 1, @n = COUNT(*) FROM #MovDia;
         WHILE @i <= @n
@@ -124,8 +124,10 @@ BEGIN
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
-        PRINT 'Fallo el procesamiento de la fecha ' + @FechaTexto;
-        THROW;
+        INSERT DBerrorLog (ErrorMessage, ErrorNumber, ErrorSeverity, ErrorState, ErrorLine, ErrorProcedure)
+        VALUES (ERROR_MESSAGE(), ERROR_NUMBER(), ERROR_SEVERITY(), ERROR_STATE(), ERROR_LINE(), ERROR_PROCEDURE());
+        RETURN 500050;
+
     END CATCH
 
     SET @Fecha = DATEADD(DAY, 1, @Fecha);

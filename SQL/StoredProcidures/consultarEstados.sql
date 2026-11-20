@@ -1,5 +1,6 @@
 USE CuentaAhorro;
 GO
+
 CREATE OR ALTER PROCEDURE dbo.SpLogin
     @User VARCHAR(32),
     @Pass VARCHAR(32)
@@ -34,9 +35,9 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE dbo.SpConsultarMovimientosEstado
+CREATE OR ALTER PROCEDURE dbo.SpConsultarEstadosCuenta
     @User VARCHAR(32),
-    @IdEstadoCuenta INT
+    @NumeroCuenta VARCHAR(64)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -46,17 +47,25 @@ BEGIN
          FROM dbo.Usuario usuario
          WHERE usuario.User_ = @User), 0);
 
-    SELECT movimiento.Fecha,
-           movimiento.Monto,
-           movimiento.Descripcion,
-           movimiento.NuevoSaldo
-    FROM dbo.Movimiento movimiento
-    WHERE movimiento.IdEstadoCuenta = @IdEstadoCuenta
+    SELECT TOP 8
+           estadoCuenta.IdEstadoCuenta,
+           estadoCuenta.NumeroCuenta,
+           estadoCuenta.fechaInicio,
+           estadoCuenta.fechafin,
+           estadoCuenta.saldoinicial,
+           estadoCuenta.saldo_final,
+           estadoCuenta.saldoMinimo,
+           estadoCuenta.cantOpATM,
+           estadoCuenta.cantOpHUmano,
+           estadoCuenta.cantOpSinpe,
+           estadoCuenta.EstaAbierto
+    FROM dbo.Estado_de_Cuenta estadoCuenta
+    WHERE estadoCuenta.NumeroCuenta = @NumeroCuenta
       AND (@EsAdministrador = 1
            OR EXISTS (SELECT 1
                       FROM dbo.Usuarios_Ver usuarioVer
                       WHERE usuarioVer.User_ = @User
-                        AND usuarioVer.NumeroCuenta = movimiento.NumeroCuenta))
-    ORDER BY movimiento.IdMovimiento;
+                        AND usuarioVer.NumeroCuenta = @NumeroCuenta))
+    ORDER BY estadoCuenta.fechafin DESC;
 END
 GO

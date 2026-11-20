@@ -13,7 +13,7 @@ BEGIN
     DECLARE @FechaTexto VARCHAR(10) = CONVERT(VARCHAR(10), @Fecha, 23);
     DECLARE @dia XML = @xml.query('/Operaciones/FechaOperacion[@Fecha=sql:variable("@FechaTexto")]');
 
-    BEGIN TRAN;
+    BEGIN TRANSACTION;
 
     INSERT INTO dbo.Persona (TipoDocuIdentidad, Nombre, ValorDocumentoIdentidad, FechaNacimiento, Email, telefono1, telefono2)
     SELECT

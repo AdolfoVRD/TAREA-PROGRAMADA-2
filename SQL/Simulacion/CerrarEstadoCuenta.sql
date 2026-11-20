@@ -54,7 +54,7 @@ BEGIN
     DECLARE @Monto DECIMAL(12,2);
 
     BEGIN TRY
-        IF @Propia = 1 BEGIN TRAN;
+        IF @Propia = 1 BEGIN TRANSACTION;
 
         -- Intereses sobre el saldo mínimo, tasa anual dividida entre 12
         SET @Monto = CAST(ROUND(@SaldoMinimo * @Tasa / 100.0 / 12.0, 2) AS DECIMAL(12,2));
