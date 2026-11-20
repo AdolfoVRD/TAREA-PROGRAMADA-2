@@ -22,7 +22,11 @@ BEGIN
     SELECT
         i.NumeroCuenta,
         i.FechaCreacion,
-        NULL,
+        DATEADD(
+            DAY,
+            -1,
+            DATEADD(MONTH, 1, CAST(i.FechaCreacion AS DATE))
+        ),
         i.Saldo,
         i.Saldo,
         i.Saldo,

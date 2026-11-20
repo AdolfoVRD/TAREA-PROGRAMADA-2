@@ -3,9 +3,6 @@ SET XACT_ABORT ON;
 SET NOCOUNT ON;
 
 
-DROP TABLE IF EXISTS #MovDia;
-DROP TABLE IF EXISTS #Cierres;
-
 CREATE MASTER KEY
 ENCRYPTION BY PASSWORD = 'Adminbd3tareabd3!';
 
@@ -46,17 +43,53 @@ SELECT @Fecha = MIN(dia.value('@Fecha', 'DATE')),
        @FechaFin = MAX(dia.value('@Fecha', 'DATE'))
 FROM @xml.nodes('/Operaciones/FechaOperacion') AS tablaDias(dia);
 
-
+-- Se crea una tabla temporal para almacenar los movimientos del día
+CREATE TABLE #MovimientosDia
+(
+    IdTemporal INT IDENTITY(1,1) PRIMARY KEY,
+    Fecha DATE NOT NULL,
+    NumeroCuenta VARCHAR(64) NOT NULL,
+    NombreTipo VARCHAR(64) NOT NULL,
+    Monto DECIMAL(12,2) NOT NULL,
+    Descripcion NVARCHAR(256)
+);
 
 -- Comienza el proceso desde la fecha siguiente
 WHILE @Fecha <= @FechaFin
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
-
+        --- Se crean Personas, cuentas, beneficiarios, usuarios y permisos del día
         EXEC dbo.SpCargarEntidadesDia
             @xml, @Fecha;
 
+        -- Se procesan los movimientos del día
+       
+
+
+
+        --- Se cierran los estados de cuenta que tengan fecha de cierre igual a la fecha actual
+        DECLARE @IdEstadoCuenta INT;
+
+        WHILE EXISTS (
+            SELECT 1
+            FROM dbo.Estado_de_Cuenta
+            WHERE FechaFin = @Fecha
+            AND EstaAbierto = 1
+        )
+        BEGIN
+
+            SELECT TOP 1
+                @IdEstadoCuenta = IdEstadoCuenta
+            FROM dbo.Estado_de_Cuenta
+            WHERE FechaFin = @Fecha
+            AND EstaAbierto = 1
+            ORDER BY IdEstadoCuenta;
+
+            EXEC dbo.SpCerrarEstadoCuenta
+                @IdEstadoCuenta = @IdEstadoCuenta;
+
+        END;
         COMMIT TRANSACTION;
 
         -- Pasar al siguiente día
