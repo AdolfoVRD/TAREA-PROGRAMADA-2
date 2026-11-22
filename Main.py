@@ -11,6 +11,7 @@ DATABASE_CONNECTION_STRING = (
     "DRIVER={ODBC Driver 18 for SQL Server};"
     "Server=tcp:dbdavidysebas.database.windows.net,1433;"
     "Initial Catalog=CuentaAhorro;Persist Security Info=False;"
+    "DATABASE=CuentaAhorro;"
     "UID=adminbd;"
     "PWD=tareaBd3;"
     "MultipleActiveResultSets=no;"
@@ -74,11 +75,10 @@ def consultarEstados(usuario, numeroCuenta):
             "saldoInicial": float(fila.saldoinicial),
             "saldoMinimo": float(fila.saldoMinimo),
             "saldoFinal": float(fila.saldo_final),
-            "intereses": float(fila.interesesAcumulados),
-            "retiros": fila.cantRetiros,
-            "depositos": fila.cantDepositos,
-            "sinpeEntrantes": fila.cantSinpeEntrantes,
-            "sinpeSalientes": fila.cantSinpeSalientes,
+            "cantOpATM": float(fila.cantOpATM),
+            "cantOpHumano": float(fila.cantOpHumano),
+            "cantOpSinpe": float(fila.cantOpSinpe),
+            "EstaAbierto": fila.EstaAbierto,
         }
         for fila in filas
     ]
@@ -288,11 +288,11 @@ def listarBitacora(idUsuario):
         app.logger.exception("Error al consultar la bitacora")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-@app.route("/movimientos/<idUsuario>", methods=["POST"])
-def listarMovimientos(Usuario, idEstado):
+@app.route("/Movimientos/<Usuario>/<idEstado>", methods=["POST"])
+def listarMovimientos(usuario, idEstado):
     # Lista los movimientos de un usuario
     try:
-        filas = ejecutarSp("dbo.SpConsultarMovimientoEstado", Usuario, idEstado)
+        filas = ejecutarSp("dbo.SpConsultarMovimientoEstado", usuario, idEstado)
         movimientos = []
         for fila in filas:
             movimientos.append({

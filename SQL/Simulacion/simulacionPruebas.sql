@@ -66,6 +66,7 @@ BEGIN
 
         -- Se procesan los movimientos del día
         -- Primero se insertan en la tabla temporal #MovimientosDia desde el xml
+        TRUNCATE TABLE #MovimientosDia;
        INSERT INTO #MovimientosDia
         (
             Fecha,
@@ -96,58 +97,58 @@ BEGIN
 
         -- Se procesan los movimientos del día en orden
         WHILE @Posicion <= @Cantidad
-        BEGIN
+            BEGIN
 
-            SELECT
-                @NumeroCuenta = NumeroCuenta,
-                @NombreTipo = NombreTipo,
-                @Fecha = Fecha,
-                @Monto = Monto,
-                @Descripcion = Descripcion
-            FROM #MovimientosDia
-            WHERE IdTemporal = @Posicion;
+                SELECT
+                    @NumeroCuenta = NumeroCuenta,
+                    @NombreTipo = NombreTipo,
+                    @Monto = Monto,
+                    @Descripcion = Descripcion
+                FROM #MovimientosDia
+                WHERE IdTemporal = @Posicion;
 
-            EXEC dbo.SpAplicarMovimiento
-                @NumeroCuenta = @NumeroCuenta,
-                @NombreTipo = @NombreTipo,
-                @Fecha = @Fecha,
-                @Monto = @Monto,
-                @Descripcion = @Descripcion;
+                EXEC dbo.SpAplicarMovimiento
+                    @NumeroCuenta = @NumeroCuenta,
+                    @NombreTipo = @NombreTipo,
+                    @Fecha = @Fecha,
+                    @Monto = @Monto,
+                    @Descripcion = @Descripcion;
 
-            SET @Posicion = @Posicion + 1;
+                SET @Posicion = @Posicion + 1;
 
-        END;
+            END;
 
-        --- Se cierran los estados de cuenta que tengan fecha de cierre igual a la fecha actual
-        DECLARE @IdEstadoCuenta INT;
+            --- Se cierran los estados de cuenta que tengan fecha de cierre igual a la fecha actual
+            DECLARE @IdEstadoCuenta INT;
 
-        WHILE EXISTS (
-            SELECT 1
-            FROM dbo.Estado_de_Cuenta
-            WHERE FechaFin = @Fecha
-            AND EstaAbierto = 1
-        )
-        BEGIN
+            WHILE EXISTS (
+                SELECT 1
+                FROM dbo.Estado_de_Cuenta
+                WHERE FechaFin = @Fecha
+                AND EstaAbierto = 1
+            )
+            BEGIN
 
-            SELECT TOP 1
-                @IdEstadoCuenta = IdEstadoCuenta
-            FROM dbo.Estado_de_Cuenta
-            WHERE FechaFin = @Fecha
-            AND EstaAbierto = 1
-            ORDER BY IdEstadoCuenta;
+                SELECT TOP 1
+                    @IdEstadoCuenta = IdEstadoCuenta
+                FROM dbo.Estado_de_Cuenta
+                WHERE FechaFin = @Fecha
+                AND EstaAbierto = 1
+                ORDER BY IdEstadoCuenta;
 
-            EXEC dbo.SpCerrarEstadoCuenta
-                @IdEstadoCuenta = @IdEstadoCuenta;
+                EXEC dbo.SpCerrarEstadoCuenta
+                    @IdEstadoCuenta = @IdEstadoCuenta;
 
-        END;
-        COMMIT TRANSACTION;
+            END;
+            COMMIT TRANSACTION;
 
-        -- Pasar al siguiente día
-        SET @Fecha = DATEADD(DAY, 1, @Fecha);
+            -- Pasar al siguiente día
+            PRINT 'Se ha procesado el día: ' + CAST(@Fecha AS NVARCHAR(10));
+            SET @Fecha = DATEADD(DAY, 1, @Fecha);
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
-
+        PRINT 'Error en la fecha: ' + CAST(@Fecha AS NVARCHAR(10)) + ' - ' + ERROR_MESSAGE();
     END CATCH
 END;
 DROP TABLE #MovimientosDia;

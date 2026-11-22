@@ -138,11 +138,12 @@ function ActualizarBitacora(IdAccion) {
 function cargarMovimientos(usuario, idEstado) {
             mensaje.textContent = "";
             tablaMovimientos.innerHTML = "";
-            fetch(`${API_URL}/Movimientos/${usuario}`, {
+            console.log("Cargando movimientos para usuario:", usuario, "y estado:", idEstado);
+            fetch(`${API_URL}/Movimientos/${usuario}/${idEstado}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ idUsuario: usuario, idEstado: idEstado })
-            })
+            })  
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}`);

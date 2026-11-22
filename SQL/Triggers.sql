@@ -1,39 +1,18 @@
 
-CREATE OR ALTER TRIGGER dbo.TrCuentaInsert
+CREATE OR ALTER TRIGGER dbo.TrAbrirPrimerEstadoCuenta
 ON dbo.Cuenta
 AFTER INSERT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO dbo.Estado_de_Cuenta
-    (
-        NumeroCuenta,
-        fechaInicio,
-        fechafin,
-        saldoinicial,
-        saldo_final,
-        saldoMinimo,
-        cantOpATM,
-        cantOpHUmano,
-        cantOpSinpe,
-        EstaAbierto
-    )
-    SELECT
-        i.NumeroCuenta,
-        i.FechaCreacion,
-        DATEADD(
-            DAY,
-            -1,
-            DATEADD(MONTH, 1, CAST(i.FechaCreacion AS DATE))
-        ),
-        i.Saldo,
-        i.Saldo,
-        i.Saldo,
-        0,
-        0,
-        0,
-        1
-    FROM inserted AS i;
-END;
+    INSERT INTO dbo.Estado_de_Cuenta (NumeroCuenta, fechaInicio, fechafin, saldoinicial, saldoMinimo, saldo_final)
+    SELECT cuentaNueva.NumeroCuenta,
+           cuentaNueva.FechaCreacion,
+           DATEADD(MONTH, 1, cuentaNueva.FechaCreacion),
+           cuentaNueva.Saldo,
+           cuentaNueva.Saldo,
+           cuentaNueva.Saldo
+    FROM inserted cuentaNueva;
+END
 GO

@@ -56,7 +56,7 @@ BEGIN
            estadoCuenta.saldo_final,
            estadoCuenta.saldoMinimo,
            estadoCuenta.cantOpATM,
-           estadoCuenta.cantOpHUmano,
+           estadoCuenta.cantOpHumano,
            estadoCuenta.cantOpSinpe,
            estadoCuenta.EstaAbierto
     FROM dbo.Estado_de_Cuenta estadoCuenta

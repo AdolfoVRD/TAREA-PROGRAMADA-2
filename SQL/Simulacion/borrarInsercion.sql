@@ -11,8 +11,8 @@ DELETE FROM dbo.Usuarios_Ver;
 DELETE FROM dbo.Estado_de_Cuenta;
 DELETE FROM dbo.Beneficiario;
 DELETE FROM dbo.Usuario;
---DELETE FROM dbo.Cuenta;
---DELETE FROM dbo.Persona;
+DELETE FROM dbo.Cuenta;
+DELETE FROM dbo.Persona;
 
 DBCC CHECKIDENT ('dbo.Bitacora', RESEED, 0);
 DBCC CHECKIDENT ('dbo.Movimiento', RESEED, 0);
