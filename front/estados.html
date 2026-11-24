@@ -28,7 +28,7 @@
                 <th>Operaciones ATM</th>
                 <th>Operaciones humanas</th>
                 <th>Operaciones SINPE</th>
-                <th>Estado</th>
+                <th>Abierto</th>
             </tr>
         </thead>
         <tbody id="tablaEstados"></tbody>
@@ -47,7 +47,7 @@
         <tbody id="tablaMovimientos"></tbody>
     </table>
     <br><br>
-    <button type="button" onclick='const usuarioGuardado = sessionStorage.getItem("usuario"); const estadoId = sessionStorage.getItem("estadoId"); cargarMovimientos(usuarioGuardado, estadoId);'>Cargar movimientos</button>
+    <h3>Click en un estado de cuenta para ver sus movimientos</h3>
     <script src="script.js"></script>
     <script>
         const selectCuenta = document.getElementById("selectCuenta");
@@ -96,7 +96,6 @@
                     estados.forEach(estado => {
                         const fila = document.createElement("tr");
                         fila.style.cursor = "pointer";
-                        sessionStorage.setItem("estadoId", JSON.stringify(estado.id));
                         fila.innerHTML = `
                             <td>${estado.fechaEstado}</td>
                             <td>${dinero(estado.saldoInicial)}</td>
@@ -108,8 +107,8 @@
                             <td>${estado.EstaAbierto ? "Sí" : "No"}</td>`;
                         fila.addEventListener("click", () => {
                             const usuarioGuardado = sessionStorage.getItem("usuario");
-                            const estadoId = sessionStorage.getItem("estadoId");
-                            cargarMovimientos(usuarioGuardado, estadoId);
+                            sessionStorage.setItem("estadoId", String(estado.id));
+                            cargarMovimientos(usuarioGuardado, estado.id);
                         });
                         tablaEstados.appendChild(fila);
                     });

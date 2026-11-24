@@ -288,18 +288,23 @@ def listarBitacora(idUsuario):
         app.logger.exception("Error al consultar la bitacora")
         return jsonify({"mensaje": "Error al consultar la base de datos"}), 500
 
-@app.route("/Movimientos/<Usuario>/<idEstado>", methods=["POST"])
+@app.route("/Movimientos/<usuario>/<idEstado>", methods=["POST"])
 def listarMovimientos(usuario, idEstado):
     # Lista los movimientos de un usuario
+    if usuario_actual is None:
+        return jsonify({"mensaje": "Debe iniciar sesión"}), 401
+    if usuario != usuario_actual:
+        return jsonify({"mensaje": "No tiene permiso sobre esta cuenta"}), 403
     try:
         filas = ejecutarSp("dbo.SpConsultarMovimientoEstado", usuario, idEstado)
         movimientos = []
         for fila in filas:
             movimientos.append({
-                "id": fila.IdUsuario,
-                "idOperacion": fila.IdOperacion,
+                "id": fila.IdMovimiento,
                 "fechaAccion": str(fila.Fecha),
-                "nombreAccion": consultarTipoOperacion(fila.IdOperacion),
+                "monto": float(fila.Monto),
+                "tipo": fila.TipoMovimiento,
+                "descripcion": fila.Descripcion,
             })
         return jsonify(movimientos), 200
     except pyodbc.Error:

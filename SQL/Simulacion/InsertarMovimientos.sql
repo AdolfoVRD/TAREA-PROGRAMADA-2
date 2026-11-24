@@ -26,7 +26,7 @@ BEGIN
     IF @Accion IS NULL OR @Monto <= 0 RETURN;
 
     SELECT @Saldo = cuenta.Saldo
-    FROM dbo.Cuenta cuenta WITH (UPDLOCK)
+    FROM dbo.Cuenta cuenta 
     WHERE cuenta.NumeroCuenta = @NumeroCuenta;
 
     IF @Saldo IS NULL RETURN;
@@ -41,7 +41,7 @@ BEGIN
     WHERE estado.NumeroCuenta = @NumeroCuenta AND estado.EstaAbierto = 1;
 
     IF @IdEstadoCuenta IS NULL RETURN;
-
+    -- Actualiza el saldo de la cuenta y del estado de cuenta, y registra el movimiento
     UPDATE dbo.Cuenta
     SET Saldo = @NuevoSaldo
     WHERE NumeroCuenta = @NumeroCuenta;

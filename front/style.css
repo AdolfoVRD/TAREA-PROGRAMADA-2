@@ -38,7 +38,7 @@ h3 {
     font-size: 1.4rem;
     letter-spacing: -1px;
     text-align: center;
-    background: linear-gradient(90deg, #b8fff0, #8f98ff, #f5fbff);
+    background: linear-gradient(90deg, #b8fff0, #ffffff, #f5fbff);
     background-size: 200% auto;
     background-clip: text;
     -webkit-text-fill-color: transparent;

@@ -136,8 +136,10 @@ function ActualizarBitacora(IdAccion) {
 }
 
 function cargarMovimientos(usuario, idEstado) {
-            mensaje.textContent = "";
-            tablaMovimientos.innerHTML = "";
+            const mensaje = document.getElementById("mensaje");
+            const tablaMovimientos = document.getElementById("tablaMovimientos");
+            if (mensaje) mensaje.textContent = "";
+            if (tablaMovimientos) tablaMovimientos.innerHTML = "";
             console.log("Cargando movimientos para usuario:", usuario, "y estado:", idEstado);
             fetch(`${API_URL}/Movimientos/${usuario}/${idEstado}`, {
                 method: "POST",

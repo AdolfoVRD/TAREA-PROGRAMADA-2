@@ -69,3 +69,33 @@ BEGIN
     ORDER BY estadoCuenta.fechafin DESC;
 END
 GO
+
+CREATE OR ALTER PROCEDURE dbo.SpConsultarMovimientoEstado
+    @User VARCHAR(32),
+    @IdEstadoCuenta INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+
+    SELECT movimiento.IdMovimiento,
+           movimiento.Fecha,
+           movimiento.Monto,
+           tipo.Nombre AS TipoMovimiento,
+           movimiento.Descripcion
+    FROM dbo.Movimiento movimiento
+    INNER JOIN dbo.Tipos_Movimiento tipo ON movimiento.IdTipoMovimiento = tipo.Id
+    WHERE movimiento.IdEstadoCuenta = @IdEstadoCuenta
+      
+    ORDER BY movimiento.Fecha DESC;
+    
+
+    -- Actualizar la bitácora con la operación de consultar movimientos
+    DECLARE @UserId INT;
+    SELECT @UserId = usuario.IdUsuario
+    FROM dbo.Usuario usuario
+    WHERE usuario.User_ = @User;
+
+    EXEC dbo.SpActualizarBitacora @UserId, 8;
+END
+GO
