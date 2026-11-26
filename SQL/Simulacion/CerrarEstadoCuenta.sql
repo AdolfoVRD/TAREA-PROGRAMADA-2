@@ -1,7 +1,7 @@
 USE CuentaAhorro;
 GO
 CREATE OR ALTER PROCEDURE dbo.SpCerrarEstadoCuenta
-    @IdEstadoCuenta INT
+    @InIdEstadoCuenta INT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -39,7 +39,7 @@ BEGIN
     FROM dbo.Estado_de_Cuenta estado
     JOIN dbo.Cuenta cuenta ON cuenta.NumeroCuenta = estado.NumeroCuenta
     JOIN dbo.Tipo_Cuenta_Ahorros tipoCuenta ON tipoCuenta.Id = cuenta.TipoCuentaId
-    WHERE estado.IdEstadoCuenta = @IdEstadoCuenta AND estado.EstaAbierto = 1;
+    WHERE estado.IdEstadoCuenta = @InIdEstadoCuenta AND estado.EstaAbierto = 1;
 
     IF @NumeroCuenta IS NULL RETURN;
 
@@ -90,7 +90,7 @@ BEGIN
         -- Cierra el estado actual
         UPDATE dbo.Estado_de_Cuenta
         SET EstaAbierto = 0
-        WHERE IdEstadoCuenta = @IdEstadoCuenta;
+        WHERE IdEstadoCuenta = @InIdEstadoCuenta;
 
         -- Abre el siguiente
         DECLARE @SaldoActual DECIMAL(12,2) = (SELECT Saldo FROM dbo.Cuenta WHERE NumeroCuenta = @NumeroCuenta);
