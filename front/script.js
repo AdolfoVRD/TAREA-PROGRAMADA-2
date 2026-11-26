@@ -160,7 +160,8 @@ function cargarMovimientos(usuario, idEstado) {
                             <td>${movimiento.fechaAccion}</td>
                             <td>${movimiento.monto}</td>
                             <td>${movimiento.tipo}</td>
-                            <td>${movimiento.descripcion}</td>`;
+                            <td>${movimiento.descripcion}</td>
+                            <td>${movimiento.NuevoSaldo}</td>`;
                         fila.addEventListener("click", () => {
                            
                         });

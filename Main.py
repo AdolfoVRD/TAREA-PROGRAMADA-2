@@ -305,6 +305,7 @@ def listarMovimientos(usuario, idEstado):
                 "monto": float(fila.Monto),
                 "tipo": fila.TipoMovimiento,
                 "descripcion": fila.Descripcion,
+                "NuevoSaldo": float(fila.NuevoSaldo)
             })
         return jsonify(movimientos), 200
     except pyodbc.Error:

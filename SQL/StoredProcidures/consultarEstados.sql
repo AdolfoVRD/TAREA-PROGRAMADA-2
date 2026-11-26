@@ -95,7 +95,8 @@ BEGIN
                movimiento.Fecha,
                movimiento.Monto,
                tipo.Nombre AS TipoMovimiento,
-               movimiento.Descripcion
+               movimiento.Descripcion,
+               movimiento.NuevoSaldo
         FROM dbo.Movimiento movimiento
         INNER JOIN dbo.Tipos_Movimiento tipo ON movimiento.IdTipoMovimiento = tipo.Id
         WHERE movimiento.IdEstadoCuenta = @inIdEstadoCuenta
