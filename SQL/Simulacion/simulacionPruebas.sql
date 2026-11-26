@@ -81,8 +81,10 @@ BEGIN
             LTRIM(RTRIM(M.N.value('@Tipo', 'VARCHAR(64)'))),
             M.N.value('@Monto', 'DECIMAL(12,2)'),
             M.N.value('@Descripcion', 'NVARCHAR(256)')
-        FROM @Xml.nodes('/Operaciones/FechaOperacion') AS F(N)
-        CROSS APPLY F.N.nodes('Movimientos') AS M(N);
+        FROM @xml.nodes('/Operaciones/FechaOperacion') AS F(N)
+        CROSS APPLY F.N.nodes('Movimientos') AS M(N)
+        -- Solo los movimientos del día que se está simulando
+        WHERE F.N.value('@Fecha', 'DATE') = @Fecha;
 
         DECLARE @Posicion INT = 1;
         DECLARE @Cantidad INT;
@@ -149,6 +151,8 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
         PRINT 'Error en la fecha: ' + CAST(@Fecha AS NVARCHAR(10)) + ' - ' + ERROR_MESSAGE();
+        -- Se detiene la simulación: seguir sin este día dejaría los saldos incorrectos
+        BREAK;
     END CATCH
 END;
 DROP TABLE #MovimientosDia;
