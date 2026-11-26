@@ -83,7 +83,6 @@ BEGIN
             M.N.value('@Descripcion', 'NVARCHAR(256)')
         FROM @xml.nodes('/Operaciones/FechaOperacion') AS F(N)
         CROSS APPLY F.N.nodes('Movimientos') AS M(N)
-        -- Solo los movimientos del día que se está simulando
         WHERE F.N.value('@Fecha', 'DATE') = @Fecha;
 
         DECLARE @Posicion INT = 1;
@@ -110,11 +109,11 @@ BEGIN
                 WHERE IdTemporal = @Posicion;
 
                 EXEC dbo.SpAplicarMovimiento
-                    @NumeroCuenta = @NumeroCuenta,
-                    @NombreTipo = @NombreTipo,
-                    @Fecha = @Fecha,
-                    @Monto = @Monto,
-                    @Descripcion = @Descripcion;
+                    @inNumeroCuenta = @NumeroCuenta,
+                    @inNombreTipo = @NombreTipo,
+                    @inFecha = @Fecha,
+                    @inMonto = @Monto,
+                    @inDescripcion = @Descripcion;
 
                 SET @Posicion = @Posicion + 1;
 
@@ -139,7 +138,7 @@ BEGIN
                 ORDER BY IdEstadoCuenta;
 
                 EXEC dbo.SpCerrarEstadoCuenta
-                    @IdEstadoCuenta = @IdEstadoCuenta;
+                    @inIdEstadoCuenta = @IdEstadoCuenta;
 
             END;
             COMMIT TRANSACTION;
@@ -151,7 +150,6 @@ BEGIN
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
         PRINT 'Error en la fecha: ' + CAST(@Fecha AS NVARCHAR(10)) + ' - ' + ERROR_MESSAGE();
-        -- Se detiene la simulación: seguir sin este día dejaría los saldos incorrectos
         BREAK;
     END CATCH
 END;
