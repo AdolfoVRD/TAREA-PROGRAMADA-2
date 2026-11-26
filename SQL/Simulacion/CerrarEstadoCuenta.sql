@@ -43,11 +43,18 @@ BEGIN
 
     IF @NumeroCuenta IS NULL RETURN;
 
-    DECLARE @IdInteres INT = (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Intereses Mensuales');
-    DECLARE @IdComisionATM INT = (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Comision Exceso ATM');
-    DECLARE @IdComisionHumano INT = (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Comision Exceso Ventana');
-    DECLARE @IdMulta INT = (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Multa Saldo Minimo');
-    DECLARE @IdCargo INT = (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Cargo Servicio Mensual');
+    DECLARE @IdInteres INT = 
+    (SELECT Id 
+    FROM dbo.Tipos_Movimiento 
+    WHERE Nombre = 'Intereses Mensuales');
+    DECLARE @IdComisionATM INT = 
+    (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Comision Exceso ATM');
+    DECLARE @IdComisionHumano INT = 
+    (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Comision Exceso Ventana');
+    DECLARE @IdMulta INT = 
+    (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Multa Saldo Minimo');
+    DECLARE @IdCargo INT = 
+    (SELECT Id FROM dbo.Tipos_Movimiento WHERE Nombre = 'Cargo Servicio Mensual');
 
     DECLARE @Propia BIT = CASE WHEN @@TRANCOUNT = 0 THEN 1 ELSE 0 END;
     DECLARE @Aplicado BIT;
@@ -70,12 +77,12 @@ BEGIN
                  N'Comisión por exceso de operaciones en cajero automático', 1, @Aplicado OUTPUT;
         END
 
-        -- Exceso de operaciones en ventana
+        -- Exceso de operaciones en humano
         IF @CantHumano > @MaxHumano
         BEGIN
             SET @Monto = (@CantHumano - @MaxHumano) * @ComisionHumano;
             EXEC dbo.SpInsertarMovimiento @NumeroCuenta, @IdComisionHumano, @FechaFin, @Monto,
-                 N'Comisión por exceso de operaciones en ventana', 1, @Aplicado OUTPUT;
+                 N'Comisión por exceso de operaciones en humano', 1, @Aplicado OUTPUT;
         END
 
         -- Multa si el saldo estuvo por debajo del mínimo permitido
